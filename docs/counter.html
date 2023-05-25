@@ -1,0 +1,30 @@
+<html>
+<body><div u-counter='{"count":6}'><h1>Value:
+<span u-count=true></span></h1>
+<button u-action="decrement">Decrement</button>
+<button u-action="reset">Reset</button>
+<button u-action="increment">Increment</button></div>
+<script>function u_counter(el, { count }) {
+        setCount(count);
+        function setCount(newValue) {
+          count = newValue;
+          el.querySelector("[u-count]").textContent = count;
+        }
+
+        el.querySelectorAll("[u-action]").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            const action = button.getAttribute("u-action");
+
+            if (action === "decrement") {
+              setCount(count - 1);
+            } else if (action === "increment") {
+              setCount(count + 1);
+            } else {
+              setCount(0);
+            }
+          });
+        });
+      }
+document.querySelectorAll('[u-counter]').forEach(el => {
+      u_counter(el, JSON.parse(el.getAttribute("u-counter")))
+  })</script></body></html>

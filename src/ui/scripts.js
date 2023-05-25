@@ -1,7 +1,7 @@
 export function renderScripts(object) {
   if (typeof object !== "object") return "";
 
-  const { slots, script, props } = object;
+  const { slots = [], script, props = {} } = object;
   const { scriptName } = props;
 
   let scriptStr = "";
@@ -10,7 +10,7 @@ export function renderScripts(object) {
 
     scriptStr = "function " + script.toString().replace("script", name);
     scriptStr += `\ndocument.querySelectorAll('[${scriptName}]').forEach(el => {
-      ${name}(el, el.getAttribute("${scriptName}"))
+      ${name}(el, JSON.parse(el.getAttribute("${scriptName}")))
   })`;
   }
 
