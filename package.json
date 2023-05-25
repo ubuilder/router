@@ -3,6 +3,7 @@
   "version": "0.0.2-next.2",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "publishConfig": {
     "access": "public"
   },
