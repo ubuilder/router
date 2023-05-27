@@ -5,7 +5,7 @@ export function renderScripts(object) {
   const { scriptName } = props;
 
   let scriptStr = "";
-  if (scriptName) {
+  if (scriptName && script) {
     const name = scriptName.replace(/\-/g, "_");
 
     scriptStr = "function " + script.toString().replace("script", name);
