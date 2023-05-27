@@ -1,2 +1,1 @@
-export { render } from "./src/ui";
-export { tag, html } from "./src/ui/tags";
+export * from "./src/ui/index.js";
