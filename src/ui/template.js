@@ -15,7 +15,7 @@ function renderAttributes({ scriptName, scriptProps, ...object }) {
 }
 
 function renderSlots(slots) {
-  return slots.map((slot) => renderTemplate(slot));
+  return slots.map((slot) => renderTemplate(slot)).join('');
 }
 
 export function renderTemplate(object) {
