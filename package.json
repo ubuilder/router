@@ -1,6 +1,6 @@
 {
   "name": "@ulibs/router",
-  "version": "0.0.2-next.5",
+  "version": "0.0.2-next.6",
   "description": "",
   "main": "index.js",
   "type": "module",
