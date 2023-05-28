@@ -3,10 +3,10 @@ function stringify(object) {
     return "'" + JSON.stringify(object) + "'";
   } else {
     return JSON.stringify(object);
-  }
+  } 
 }
 
-function renderAttributes({ scriptName, scriptProps, ...object }) {
+function renderAttributes({ scriptName, scriptProps, onMount, script, ...object }) {
   let result = "";
   if (scriptName) {
     result += " " + scriptName + "=" + stringify(scriptProps ?? {});
@@ -19,7 +19,7 @@ function renderAttributes({ scriptName, scriptProps, ...object }) {
 }
 
 function renderSlots(slots) {
-  return slots.map((slot) => renderTemplate(slot)).join("");
+  return slots.map((slot) => renderTemplate(slot)).join('');
 }
 
 export function renderTemplate(object) {

@@ -1,10 +1,8 @@
-export function tag(tag, { script, style, ...props } = {}, ...slots) {
+export function tag(tag, props = {}, ...slots) {
   return {
     tag,
     props,
     slots,
-    script,
-    style,
   };
 }
 
