@@ -1,8 +1,8 @@
 function stringify(object) {
-  if (typeof object === "object") {
-    return "'" + JSON.stringify(value) + "'";
+  if (typeof object === "object" || typeof object === "number") {
+    return "'" + JSON.stringify(object) + "'";
   } else {
-    return value;
+    return JSON.stringify(object);
   }
 }
 
@@ -19,7 +19,7 @@ function renderAttributes({ scriptName, scriptProps, ...object }) {
 }
 
 function renderSlots(slots) {
-  return slots.map((slot) => renderTemplate(slot)).join('');
+  return slots.map((slot) => renderTemplate(slot)).join("");
 }
 
 export function renderTemplate(object) {
