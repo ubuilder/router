@@ -1,4 +1,4 @@
-export function tag(tag, { script, style, ...props }, ...slots) {
+export function tag(tag, { script, style, ...props } = {}, ...slots) {
   return {
     tag,
     props,
@@ -8,7 +8,7 @@ export function tag(tag, { script, style, ...props }, ...slots) {
   };
 }
 
-export function html({ head, body }) {
+export function html({ head, body } = {}) {
   return tag("html", {}, [
     head && tag("head", {}, head),
     tag("body", {}, body),
