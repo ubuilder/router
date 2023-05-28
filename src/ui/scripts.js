@@ -1,6 +1,7 @@
 export function renderScripts(object) {
   if (typeof object !== "object") return "";
 
+  if(Array.isArray(object)) return object.map(item => renderScripts(item)).join('\n')
   const { slots = [], script, props = {} } = object;
   const { scriptName } = props;
 
@@ -14,5 +15,5 @@ export function renderScripts(object) {
   })`;
   }
 
-  return [scriptStr, ...slots.map((slot) => renderScripts(slot))].join("");
+  return [scriptStr, ...slots.map((slot) => renderScripts(slot))].join("\n");
 }
