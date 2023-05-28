@@ -1,21 +1,25 @@
+function stringify(object) {
+  if (typeof object === "object") {
+    return "'" + JSON.stringify(value) + "'";
+  } else {
+    return value;
+  }
+}
+
 function renderAttributes({ scriptName, scriptProps, ...object }) {
   let result = "";
   if (scriptName) {
-    result += " " + scriptName + "='" + JSON.stringify(scriptProps ?? {}) + "'";
+    result += " " + scriptName + "=" + stringify(scriptProps ?? {});
   }
 
   for (let [key, value] of Object.entries(object)) {
-    if (typeof value === "object") {
-      result += " " + key + "='" + JSON.stringify(value) + "'";
-    } else {
-      result += " " + key + "=" + JSON.stringify(value);
-    }
+    result += " " + key + "=" + stringify(value);
   }
   return result;
 }
 
 function renderSlots(slots) {
-  return slots.map((slot) => renderTemplate(slot));
+  return slots.map((slot) => renderTemplate(slot)).join('');
 }
 
 export function renderTemplate(object) {
