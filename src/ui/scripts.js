@@ -11,7 +11,7 @@ function renderScriptInternal(component) {
         script: component.props.script,
       },
       renderScriptInternal(component.slots),
-    ].flat(2);
+    ].flat(5);
   }
   return [];
 }
