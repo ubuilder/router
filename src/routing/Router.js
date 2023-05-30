@@ -2,6 +2,8 @@ import { readdir } from 'fs/promises';
 import { renderTemplate } from '../ui/index.js';
 import http from 'http'
 import { readFile } from 'fs/promises';
+import { resolve } from 'path';
+
 
 
 export default class Routing{
