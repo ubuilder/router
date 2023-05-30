@@ -1,10 +1,8 @@
 import { readdir } from 'fs/promises';
-import express, { Router } from 'express';
 import { renderTemplate } from '../ui/index.js';
-import  { dirname, resolve } from 'path';
 import http from 'http'
 import { readFile } from 'fs/promises';
-import fs from 'fs/promises'
+
 
 export default class Routing{
     static routeContent={}
@@ -15,10 +13,7 @@ export default class Routing{
         registerFileBasedRoutes(this.routeFolder)
     }
     static addRoute(route){
-        // if(Router.routeContent[route])
-        // let changedRoute = route.replace(/\[(.+?)\]/g, (match, p1)=> ":"+p1)
-        // app.all(changedRoute, (req, res)=>routeRigesterHandler(req, res, route))
-    
+        //
 
     }
 
@@ -67,7 +62,6 @@ export default class Routing{
     
     static getIndex(route){
         console.log('getIndex at route: ', route)
-        console.log('getIndex at route: ', (Routing.routeContent[route] && Routing.routeContent[route].index)? 'true': 'false')
         
         if(Routing.routeContent[route] && Routing.routeContent[route].index){
             return Routing.routeContent[route].index 
@@ -130,6 +124,8 @@ function routingHandler(req, res){
 }
 
 
+
+
 export function startServer(host, port){
     const app = http.createServer(requestHandler)
     port = process.env.PORT || port|| 1000
@@ -174,24 +170,23 @@ async function requestHandler(req, res){
         return
     }
 
-
     routingHandler(req, res)
 }
 
 async function serveStatics(file){
     var res 
-      var data = await readFile('./public/'+file, 'utf8' , (err, data)=>{
-            if(err) {
-                console.log("error: ",err)
-                return
-            }
-            console.log('data: ', data)
-            res = data
-            return data
-            
-        })
-        console.log("res", data)
+    var data = await readFile('./public/'+file, 'utf8' , (err, data)=>{
+        if(err) {
+            console.log("error: ",err)
+            return
+        }
+        console.log('data: ', data)
+        res = data
         return data
+        
+    })
+    console.log("res", data)
+    return data
 }
 
 
