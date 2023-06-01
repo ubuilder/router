@@ -1,3 +1,4 @@
-import Routing ,{startServer}from './src/routing/Router.js'
+import Router from './src/routing/Router.js'
 
-startServer()
+Router.startServer()
+
