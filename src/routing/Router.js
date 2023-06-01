@@ -220,10 +220,10 @@ async function requestHandler(req, res){
     }
 
     console.log("request: ", req.method)
-    if(req.method == 'GET' && req.headers['accept'].indexOf('text/html') > -1){
+    if(req.method == 'GET' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
         routingHandler(req, res)
 
-    }else if(req.method == 'POST' && req.headers['accept'].indexOf('text/html') > -1){
+    }else if(req.method == 'POST' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
         routingHandler(req, res)
 
     }else {
