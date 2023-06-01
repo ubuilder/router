@@ -141,9 +141,7 @@ export default class Routing{
 
 
 // for routing with out express
-function routingHandler(req, res){
-
-    
+function pageRoutingHandler(req, res){
 
     let route = Routing.normalizeRoute(req.url)
     var match
@@ -221,19 +219,19 @@ async function requestHandler(req, res){
 
     console.log("request: ", req.method)
     if(req.method == 'GET' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
-        routingHandler(req, res)
+        pageRoutingHandler(req, res)
 
     }else if(req.method == 'POST' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
-        routingHandler(req, res)
+        pageRoutingHandler(req, res)
 
     }else {
-        apiRequestHandler(req, res)
+        apiRoutingHandler(req, res)
     }
 }
 
 
 
-async function apiRequestHandler(req, res){
+async function apiRoutingHandler(req, res){
 
     let route = Routing.normalizeRoute(req.url)
     var match
