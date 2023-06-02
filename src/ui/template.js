@@ -3,23 +3,33 @@ function stringify(object) {
     return "'" + JSON.stringify(object) + "'";
   } else {
     return JSON.stringify(object);
-  } 
+  }
 }
 
-function renderAttributes({ scriptName, scriptProps, onMount, script, ...object }) {
+function renderAttributes({
+  scriptName,
+  scriptProps,
+  onMount,
+  script,
+  ...object
+}) {
   let result = "";
   if (scriptName) {
     result += " " + scriptName + "=" + stringify(scriptProps ?? {});
   }
 
   for (let [key, value] of Object.entries(object)) {
-    result += " " + key + "=" + stringify(value);
+    if (value === "") {
+      result += " " + key;
+    } else {
+      result += " " + key + "=" + stringify(value);
+    }
   }
   return result;
 }
 
 function renderSlots(slots) {
-  return slots.map((slot) => renderTemplate(slot)).join('');
+  return slots.map((slot) => renderTemplate(slot)).join("");
 }
 
 export function renderTemplate(object) {
