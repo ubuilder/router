@@ -7,17 +7,46 @@ import { resolve } from 'path';
 
 
 export default class Routing{
+
+    // {route:{ inde: sdf, layout: sdkfa, error: sdda}}
     static routeContent={}
+    
     static route
     static routeFolder = './src/routes'
 
     constructor(){
         registerFileBasedRoutes(this.routeFolder)
     }
-    static addRoute(route){
-        //
+    //http request methods handler functions. they could be used to make API
+    static get(route, callbackHandler){
+        this.routeContent[route]
 
     }
+    static post(route, callbackHandler){
+        //
+    }
+    static put(route, callbackHandler){
+        //
+    }
+    static delete(route, callbackHandler){
+        // 
+    }
+
+    // this class does not support app.all() fuction and it is not expected
+    //for adding middleware. the same as express
+    static use(route, callbackHandler){
+        // 
+    }
+
+
+    //for addin a custom page route that maybe the page is not in the routes folder or any other
+    // the page sould export a defalut function that return the content
+    static async addRoute(route, pagePath){
+        this.routeContent[route] = {
+            index: await import(pagePath)
+        }
+    }
+
 
     static async registerFileBasedRoutes (dir){
         const dirent = await readdir(dir, {withFileTypes: true, recursive: true});
@@ -32,19 +61,29 @@ export default class Routing{
                 if(route == '') route = '/'
 
                 if(dirent.name == 'index.js'){
-                    Routing.routeContent[route]= Object.assign({index: renderTemplate((await import("file://"+ res)).default() ) }, Routing.routeContent[route]) 
+                    Routing.routeContent[route]= Object.assign({index: await import("file://"+ res) }, Routing.routeContent[route]) 
     
                 }else if(dirent.name == 'layout.js'){
                     Routing.routeContent[route]= Object.assign({layout: await import("file://"+ res)}, Routing.routeContent[route]) 
     
                 }else if(dirent.name == 'error.js'){
-                    Routing.routeContent[route]= Object.assign({error: renderTemplate(await import("file://"+ res))}, Routing.routeContent[route]) 
+                    Routing.routeContent[route]= Object.assign({error: await import("file://"+ res)}, Routing.routeContent[route]) 
+    
+                }else if(dirent.name == 'api.js'){
+                    Routing.routeContent[route]= Object.assign({ ...(await import("file://"+ res))}, Routing.routeContent[route]) 
     
                 }
             }
         }))
         return
     }
+    static getLayout(route, content){
+        if(Routing.routeContent[route] && Routing.routeContent[route].layout)
+            return Routing.routeContent[route].layout.default(content)  
+        else 
+            return content
+    }
+
     static getLayouts(route, content){
         console.log('getlayout at route: ', route)
         if(route == '' ) return content
@@ -83,6 +122,16 @@ export default class Routing{
         if (route.endsWith('/')&& route.length > 1) route = route.slice(0, route.lastIndexOf('/'))
         return route
     }
+    static startServer(host, port){
+        const app = http.createServer(requestHandler)
+        port = process.env.PORT || port|| 1000
+        host = host|| 'localhost';
+        app.listen(port, host, ()=>{
+            console.info(`app is listening on ${host}:${port}/`)
+        })
+    
+    }
+    
 }
 
 
@@ -90,8 +139,10 @@ export default class Routing{
 
 
 
+
 // for routing with out express
-function routingHandler(req, res){
+function pageRoutingHandler(req, res){
+
     let route = Routing.normalizeRoute(req.url)
     var match
     let entries = Object.entries(Routing.routeContent)
@@ -103,6 +154,7 @@ function routingHandler(req, res){
             console.log("incomming route: ", req.url)
             route = Routing.normalizeRoute(entries[i][0])
             let content = Routing.getIndex(route)
+            if(content) content = renderTemplate(content.default(req.params))
             let layout
             //for partial request it returns only pages with out layouts
             if(req.headers['u-partial'] == 'true'){
@@ -112,7 +164,7 @@ function routingHandler(req, res){
             if(content) {
                 layout = renderTemplate( Routing.getLayouts(route, content))
             }else{
-                layout = Routing.getError(route)
+                layout = renderTemplate( Routing.getError(route).default(req.params))
             }
             res.send(layout) 
             return
@@ -128,38 +180,31 @@ function routingHandler(req, res){
 
 
 
-export function startServer(host, port){
-    const app = http.createServer(requestHandler)
-    port = process.env.PORT || port|| 1000
-    host = host|| 'localhost';
-    app.listen(port, host, ()=>{
-        console.log("app is listenting on host",host,"and port ", port)
-    })
-
-}
-
-
-
-
-
 
 //scanning the route folder and register the routes and contents
 await Routing.registerFileBasedRoutes(Routing.routeFolder)
 
 Routing.route = Object.keys(Routing.routeContent)
-console.log('routes: ', Routing.route)
+console.log('routeContents: ', Routing.routeContent)
 
 
 async function requestHandler(req, res){
-    res.json = async (data) =>{
+    res.json = async (data, statusCode = 200) =>{
         res.setHeader('Content-type', 'application/json')
-        res.writeHead(200)
+        res.writeHead(statusCode)
         res. end(await JSON.stringify(data))
     }
     res.send = (data)=>{
         res.setHeader('Content-type', 'text/html')
         res.writeHead(200)
         res.end(data)
+    }
+    res.setStatus = (code) =>{
+        res.setHeader('Content-type', 'application/json')
+        res.writeHead(code)
+        return {json : async (data)=>{
+            res.end( await JSON.stringify(data))
+        }}
     }
 
     if(/\.(js|css|jpg)$/.test(req.url)){
@@ -172,7 +217,61 @@ async function requestHandler(req, res){
         return
     }
 
-    routingHandler(req, res)
+    console.log("request: ", req.method)
+    if(req.method == 'GET' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
+        pageRoutingHandler(req, res)
+
+    }else if(req.method == 'POST' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
+        pageRoutingHandler(req, res)
+
+    }else {
+        apiRoutingHandler(req, res)
+    }
+}
+
+
+
+async function apiRoutingHandler(req, res){
+
+    let route = Routing.normalizeRoute(req.url)
+    var match
+    let entries = Object.entries(Routing.routeContent)
+
+    for(let i = 0 ; i<  entries.length ; i++){
+        match = matchRoute(entries[i][0], route)
+        console.log('match: ', route, entries[i][0], match)
+        if(match.result){
+            console.log("incomming route: ", req.url)
+            route = Routing.normalizeRoute(entries[i][0])
+            if(req.method == "GET"){
+                if(Routing.routeContent[route].get){
+                    return Routing.routeContent[route].get(req, res)
+                }
+            }else if(req.method == "POST"){
+                if(Routing.routeContent[route].post){
+                    return Routing.routeContent[route].post(req, res)
+                }
+        
+            }else if(req.method == "PUT"){
+                if(Routing.routeContent[route].put){
+                    return Routing.routeContent[route].put(req, res)
+                }
+        
+            }else if(req.method == "DELETE"){
+                if(Routing.routeContent[route].del){
+                    return Routing.routeContent[route].del(req, res)
+                }
+            }
+
+            // if no handler method found
+            res.json({'message': 'method not supported'}, 404)
+
+            return 
+        }   
+    }
+        
+    
+
 }
 
 async function serveStatics(file){
