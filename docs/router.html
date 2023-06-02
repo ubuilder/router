@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Router</title>
+</head>
+<body>
+    <header>
+        <ul>
+            <li><a>Routing</a></li>
+            <ul>
+                <li><a href="#registerFileBasedRoutes">registerFileBasedRoutes()</a></li>
+                <li><a href="#getIndex">getIndex(route)</a></li>
+                <li><a href="#getLayouts">getLayouts(route, content)</a></li>
+                <li><a href="getError">getError(route)</a></li>
+            </ul>
+        </ul>
+        
+    </header>
+
+    <br>
+    <br>
+    <br>
+    <main>
+        <section >
+            <h2 id="registerFileBasedRoutes">registerFileBasedRoutes(route)</h2>
+
+            <br>
+            this function accepts base route foder as aurgument
+            <br>
+            this function search the route folder and rigester the routes
+        </section>
+        <section >
+            <h2 id="getIndex">getIndex(route)</h2>
+            
+            <br>
+            this function accepts a route as augument and return the ontent of the index file at that route
+            if the page is not find the it return 
+            <br>
+            this fuction is called for any request to page ether partial or none partial
+        </section>
+
+        <section >
+            <h2 id="getLayouts">getLayouts(route, content)</h2>
+            this function accepts tow argument route and content the: route is the same as the route of 
+            getIndex(route),
+            content is any thing that is return from getindex(route)
+            <br>
+            this function loades the layouts in  hirarchi
+            <br>
+            for example : 
+            route: '/home/contact/phone'
+
+            so the getLayouts() fucntion first searches the phone directry for layout
+            and then in contact director and then in home directore 
+            and nest the together .
+
+        </section>
+        <section>
+            <h2 id="getError">getError(route)</h2>
+            this fuction accepts route as argument and this is the same as route or gerIndex(route)
+            <br>
+            this fucntion search for any error page in the route directory
+
+        </section>
+    </main>
+
+    
+</body>
+</html>
