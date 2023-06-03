@@ -21,28 +21,33 @@ async function request(url, body){
 const handleLinkClick = async (event)=>{
     event.preventDefault()
     console.log('link clicked')
+    const url = new URL("https://www.abc.com/"+event.target.getAttribute('href'))
 
-    let currentPath = window.location.pathname.split('/')
-    let newPath = event.target.getAttribute('href').split('/')
-    let targetId = 'data-target'
+    let route = event.target.getAttribute('href')
+    let userSpecifiedTargetId = url.searchParams.get('for')
+    let autoSpecifiedTargetId = 
+
+
     
-    // for (let i = 0 ; i < Math.min(currentPath.length, newPath.length); i++ ){
-    //     if(path[i] !== p[i]){
-    //         targetId = p[i==0? 0:(i-1)]
-    //         break;
-    //     }
-    // }
-    
-    console.log('targetId', targetId)
+    let res = await request(route)
+    if(!res.ok) {
+        // handle error
+    }
+    let data = await res.json()
+    if(userSpecifiedTargetId){
+        document.getElementById(userSpecifiedTargetId).innerHTML = JSON.stringify(data)
+        registerClick()
+    }else{
+
+        
+    }
+
+
     if(targetId){
-        targetId = targetId.trim()
-        event.preventDefault()
-        const route = event.target.getAttribute('href')
-        let res = await request(route)
+       
         if(res.ok){
             let data = await res.json()
-            document.getElementById(targetId).innerHTML = JSON.stringify(data)
-            registerClick()
+            
                 
         }    
     }

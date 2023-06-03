@@ -1,5 +1,5 @@
 import { readdir } from 'fs/promises';
-import { renderTemplate } from '../ui/index.js';
+import { renderScripts, renderStyle, renderTemplate } from '../ui/index.js';
 import http from 'http'
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
@@ -183,8 +183,16 @@ function pageRoutingHandler(req, res){
             //for partial request it returns only pages with out layouts
             if(req.headers['u-partial'] == 'true'){
                 const targetLayout = req.headers['target-layout']
-                layout = renderTemplate(Routing.getPartialLayouts(route, targetLayout, content))
-                return res.json({template: layout}, 200)
+                layout =  Routing.getPartialLayouts(route, targetLayout, content)
+                const layoutTemplate = renderTemplate(layout)
+                const layoutStyle = renderStyle(layout)
+                const layoutScript = renderScripts(layout)
+                const response = {
+                    template: layoutTemplate,
+                    style: layoutStyle,
+                    script: layoutScript
+                }
+                return res.json(response, 200)
             }
 
             if(content) {

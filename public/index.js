@@ -59,10 +59,34 @@ const handleRequestedData = async(res, targetLayout) =>{
     }
     let {template, style, script} = await res.json()
 
+    // template 
     document.getElementById('content-'+targetLayout).innerHTML = template
     
+    //style
+    const isStyle = document.getElementById( 'style-'+targetLayout)
+    if(isStyle){
+        isStyle.innerHTML = style
+    }else{
+        let head = document.getElementsByTagName('head')[0]
+        let css = document.createElement('style')
+        css.id = "style-"+targetLayout
+        css.innerHTML = style
+        head.appendChild(css)
+    }
+    
+    //javascript
+    const isScript = document.getElementById( 'script-'+targetLayout)
+    if(isScript){
+        isScript.innerHTML = style
+    }else{
+        let body = document.getElementsByTagName('body')[0]
+        let js = document.createElement('script')
+        js.id = "script-"+targetLayout
+        js.innerHTML = style
+        body.appendChild(js)
+    }    
+    
     registerClick()
-
 }
 
 function registerClick(){
