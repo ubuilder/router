@@ -1,18 +1,37 @@
-export function renderScripts(object) {
-  if (typeof object !== "object") return "";
-
-  const { slots = [], script, props = {} } = object;
-  const { scriptName } = props;
-
-  let scriptStr = "";
-  if (scriptName) {
-    const name = scriptName.replace(/\-/g, "_");
-
-    scriptStr = "function " + script.toString().replace("script", name);
-    scriptStr += `\ndocument.querySelectorAll('[${scriptName}]').forEach(el => {
-      ${name}(el, JSON.parse(el.getAttribute("${scriptName}")))
-  })`;
+function renderScriptInternal(component) {
+  if (Array.isArray(component)) {
+    return component.map((x) => renderScriptInternal(x));
   }
 
-  return [scriptStr, ...slots.map((slot) => renderScripts(slot))].join("");
+  if (typeof component === "object") {
+    return [
+      {
+        onMount: component.props.onMount,
+        scriptName: component.props.scriptName,
+        script: component.props.script,
+      },
+      renderScriptInternal(component.slots),
+    ].flat(5);
+  }
+  return [];
+}
+
+export function renderScripts(component) {
+  if (typeof component !== "object") return;
+
+  const scripts = renderScriptInternal(component);
+
+  let result = "";
+  let scriptsObject = scripts.reduce((prev, curr) => {
+    return { ...prev, [curr.scriptName]: curr.onMount };
+  }, {});
+
+  result += Object.keys(scriptsObject)
+    .map((key) => scriptsObject[key])
+    .join("\n");
+
+  result += "\n\n/* ----------------------------------------------- */\n";
+  result += scripts.map((script) => script.script).join("\n");
+
+  return result;
 }

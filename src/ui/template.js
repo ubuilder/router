@@ -1,21 +1,35 @@
-function renderAttributes({ scriptName, scriptProps, ...object }) {
+function stringify(object) {
+  if (typeof object === "object" || typeof object === "number") {
+    return "'" + JSON.stringify(object) + "'";
+  } else {
+    return JSON.stringify(object);
+  }
+}
+
+function renderAttributes({
+  scriptName,
+  scriptProps,
+  onMount,
+  script,
+  ...object
+}) {
   let result = "";
   if (scriptName) {
-    result += " " + scriptName + "='" + JSON.stringify(scriptProps ?? {}) + "'";
+    result += " " + scriptName + "=" + stringify(scriptProps ?? {});
   }
 
   for (let [key, value] of Object.entries(object)) {
-    if (typeof value === "object") {
-      result += " " + key + "='" + JSON.stringify(value) + "'";
+    if (value === "") {
+      result += " " + key;
     } else {
-      result += " " + key + "=" + JSON.stringify(value);
+      result += " " + key + "=" + stringify(value);
     }
   }
   return result;
 }
 
 function renderSlots(slots) {
-  return slots.map((slot) => renderTemplate(slot));
+  return slots.map((slot) => renderTemplate(slot)).join("");
 }
 
 export function renderTemplate(object) {

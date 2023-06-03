@@ -7,15 +7,25 @@ function Counter({ count = 0 }) {
       scriptName: "u-counter",
       scriptProps: { count },
       script(el, { count }) {
+        function $(selector, callback) {
+            el.querySelectorAll(selector).forEach(el => callback(el))
+        }
+        function on(element, event, callback) {
+            element.addEventListener(event, callback)
+        }
+        function attr(element, attribute) {
+            return element.getAttribute(attribute)
+        }
+
         setCount(count);
         function setCount(newValue) {
           count = newValue;
-          el.querySelector("[u-count]").textContent = count;
+          $("[u-count]", el => el.textContent = count);
         }
 
-        el.querySelectorAll("[u-action]").forEach((button) => {
-          button.addEventListener("click", (event) => {
-            const action = button.getAttribute("u-action");
+        $("[u-action]", (button) => {
+          on(button, "click", (event) => {
+            const action = attr(button, "u-action");
 
             if (action === "decrement") {
               setCount(count - 1);
