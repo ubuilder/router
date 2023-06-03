@@ -3,6 +3,7 @@ import { renderTemplate } from '../ui/index.js';
 import http from 'http'
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
+import { tag } from '../ui/index.js';
 
 
 
@@ -77,21 +78,42 @@ export default class Routing{
         }))
         return
     }
+    static wrapContent(route, content){
+        return tag('span', {id: 'content-'+route}, content)
+    }
+    static wrapLayout(route, content){
+        return tag('span', {id: 'layout-'+route}, content)
+    }
     static getLayout(route, content){
+        console.log('layout content: ', content)
         if(Routing.routeContent[route] && Routing.routeContent[route].layout)
-            return Routing.routeContent[route].layout.default(content)  
+            return this.wrapLayout(route, Routing.routeContent[route].layout.default(this.wrapContent(route, content)))   
         else 
             return content
     }
+    // partial page requests need partial layouts
+    static getPartialLayouts(route, targetLayout, content){
+        console.log('getlayout at route and targetLayout: ', route, targetLayout)
+        if(route == '' ) return content
+        if(route == targetLayout) return content
+        if(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)) == targetLayout) return this.getLayout(route, content)
+        
+        if(route == '/'){
+            return this.getLayout(route, content)
+        } 
+        if(Routing.routeContent[route] && Routing.routeContent[route].layout){
+            return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, Routing.routeContent[route].layout.default(content))
+        }else{
+            return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, content)  
+        }
+    }
 
+    // for none partial request hole the layout hirarchi until to the base layout should be called
     static getLayouts(route, content){
         console.log('getlayout at route: ', route)
         if(route == '' ) return content
         if(route == '/'){
-            if(Routing.routeContent[route] && Routing.routeContent[route].layout)
-                return Routing.routeContent[route].layout.default(content)  
-            else 
-                return content
+            return this.getLayout(route, content)
         } 
         if(Routing.routeContent[route] && Routing.routeContent[route].layout){
             return this.getLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)),  Routing.routeContent[route].layout.default(content))
@@ -154,11 +176,15 @@ function pageRoutingHandler(req, res){
             console.log("incomming route: ", req.url)
             route = Routing.normalizeRoute(entries[i][0])
             let content = Routing.getIndex(route)
-            if(content) content = renderTemplate(content.default(req.params))
+            if(!content) return res.send(Routing.getError(route))
+
+            content = renderTemplate(content.default(req.params))
             let layout
             //for partial request it returns only pages with out layouts
             if(req.headers['u-partial'] == 'true'){
-                return content? res.json({target: 'this would be implemented later', content: content}) : Routing.getError(route)
+                const targetLayout = req.headers['target-layout']
+                layout = renderTemplate(Routing.getPartialLayouts(route, targetLayout, content))
+                return res.json({template: layout}, 200)
             }
 
             if(content) {
@@ -194,9 +220,9 @@ async function requestHandler(req, res){
         res.writeHead(statusCode)
         res. end(await JSON.stringify(data))
     }
-    res.send = (data)=>{
+    res.send = (data, statusCode = 200)=>{
         res.setHeader('Content-type', 'text/html')
-        res.writeHead(200)
+        res.writeHead(statusCode)
         res.end(data)
     }
     res.setStatus = (code) =>{
