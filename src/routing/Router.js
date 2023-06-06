@@ -1,11 +1,9 @@
 import { readdir } from 'fs/promises';
 import { renderScripts, renderTemplate } from '../ui/index.js';
 import http from 'http'
-import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { tag } from '../ui/index.js';
-import { staticServer } from './someTestMiddleware/staticServer.js';
-export {staticServer}
+export { staticServer } from './someTestMiddleware/staticServer.js';
 
 export default class Routing{
 
