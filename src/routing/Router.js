@@ -81,7 +81,7 @@ export default class Routing{
     }
 
 
-
+    //search and registers all routes in side the dir folder
     static async registerFileBasedRoutes (dir){
         const dirent = await readdir(dir, {withFileTypes: true, recursive: true});
         const file = await Promise.all(dirent.map(async dirent =>{
@@ -97,19 +97,14 @@ export default class Routing{
                 if(dirent.name == 'index.js'){
                     const exports =  await import("file://"+ res)
                     const {default: index , ...rest} = exports
-                    console.log('exports: ', {index , ...rest} )
                     Routing.routeContent[route]= Object.assign({index, ...rest}, Routing.routeContent[route]) 
     
                 }else if(dirent.name == 'layout.js'){
                     const {default: layout , ...rest} = await import("file://"+ res)
-                    console.log('exports: ', {layout , ...rest} )
-
                     Routing.routeContent[route]= Object.assign({layout, ...rest}, Routing.routeContent[route]) 
     
                 }else if(dirent.name == 'error.js'){
                     const {default: error , ...rest} = await import("file://"+ res)
-                    console.log('exports: ', {error , ...rest} )
-
                     Routing.routeContent[route]= Object.assign({error, ...rest}, Routing.routeContent[route]) 
     
                 }else if(dirent.name == 'api.js'){
@@ -255,7 +250,7 @@ async function pageRoutingHandler(req, res){
     }
 
     let error = Routing.getError(route)
-    res.send(error) 
+    res.send(error, 404) 
 }
 //handle routing for api requests
 async function apiRoutingHandler(req, res){
@@ -303,8 +298,8 @@ async function apiRoutingHandler(req, res){
             return 
         }   
     }
+    res.setStatus(402).json({'message': '404 page not found'})
         
-    
 }
 // checks if the request is a api requst or it is browser request
 //adds some method to request

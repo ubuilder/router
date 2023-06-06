@@ -1,6 +1,3 @@
-
-
-
 document.querySelector('head').innerHTML = document.querySelector('head').innerHTML + `
 <style>
 a[href] * {
@@ -8,9 +5,16 @@ a[href] * {
 }    
 </style>
 `
+function locationHandler(url){
+    console.log('location changes to : ', url)
+    console.log( window)
+    window.history.pushState("object or string", "Title", window.location.origin+url);
+}
 
 async function request(url, originLayout){
-    return  await fetch(url, {
+    if(url.startsWith('.')) url = url.slice(1)
+    locationHandler(url)
+    return  await fetch(window.location.origin+url, {
         method: 'get',
         headers: {
             "target-layout": `${originLayout}`,

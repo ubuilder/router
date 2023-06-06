@@ -3,7 +3,7 @@ import { logger } from './src/routing/someTestMiddleware/logger.js';
 // import { staticServer } from './src/routing/someTestMiddleware/staticServer.js';
 import * as homePage from './src/routes/index.js'
 
-//middle ware
+//middleware
 Router.use(logger)
 Router.use(staticServer('./public'))
 
