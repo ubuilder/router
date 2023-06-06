@@ -59,7 +59,7 @@ export default class Routing{
         this.routeContent[`middleware-${i}`] = {middleware: callbackHandler}
     }
 
-
+    //remove the route and its handlers
     static remove(route){
         delete this.routeContent[route]
         console.log(route, 'deleted')
