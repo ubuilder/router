@@ -1,14 +1,13 @@
-import { tag } from "../../ui/index.js"
+import { tag } from "../../../ui/index.js"
 export default function(prop){
     console.log('layout: ', prop)
     return tag('div', {}, [
         tag('div', {}, [
 
-            tag('h3', {}, 'contatct layout'),
+            tag('h3', {}, 'mission layout'),
+            tag('a', {href: './'}, 'home'),
             tag('a', {href: './about'}, 'about'),
-            tag('a', {href: './contact'}, 'contact'),
-            tag('a', {href: './user'}, 'user'),
-            // tag('hr')
+            // tag('hr', {}, [])
         ]),
         tag('div', {}, prop)
 

@@ -2,7 +2,6 @@ export const get = (req, res)=>{
     console.log(`get end point at route ${req.url}`)
     res.json({message: `get end point at route ${req.url}`}, 200)
     
-
 }
 
 export const post = (req, res)=>{

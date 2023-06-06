@@ -1,13 +1,11 @@
-import { renderTemplate, tag } from "../ui/index.js";
+import { tag } from "../ui/index.js";
 
 export default function(prop){
-    return tag('div', {}, [
-        tag('a', {href:'./'}, "home"),
-        tag('a', {href:'./about/'}, "about"),
-        tag('a', {href:'./contact/'}, "contact"),
-        tag('a', {href:'./login/'}, "login"),
-        tag('a', {href:'./user/'}, "user"),
-    ])
+    return tag('div', {}, 'hellow world this is home page')
+}
+
+export function error(prop){
+    return tag('div', {}, 'error ocured')
 }
 
 

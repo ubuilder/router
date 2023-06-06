@@ -1,3 +1,3 @@
 export default function(){
-    return 'user id route'
+    return 'mission body'
 }

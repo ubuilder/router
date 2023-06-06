@@ -1,3 +1,3 @@
 export default function(){
-    return 'user id route'
+    return 'sponser body'
 }
