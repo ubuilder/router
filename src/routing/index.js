@@ -53,10 +53,11 @@ const handleLinkClick = async (event)=>{
     let targetLayout = userSpecifiedTargetLayout? userSpecifiedTargetLayout: autoSpecifiedTargetLayout
     console.log('target layout requested: ', targetLayout)
 
-    let res = await request(route, targetLayout)
-    handleRequestedData(res, targetLayout)
+    await handleRequestedData(route, targetLayout)
 }
-const handleRequestedData = async(res, targetLayout) =>{
+
+const handleRequestedData = async(route, targetLayout) =>{
+    let res = await request(route, targetLayout)
     if(!res.ok) {
         // handle error
         return document.getElementById('content-'+targetLayout).innerHTML = res.error
