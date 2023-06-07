@@ -16,10 +16,12 @@ export default class Routing{
     port
     host
 
-    constructor({host, port, routes, ...rest}){
-        this.routesFolder = routes
-        this.host = host
-        this.port = port
+    constructor(config){
+        if(config){
+            this.routesFolder = config.routes
+            this.host = config.host
+            this.port = config.port
+        }
     }
     startServer(host= this.host, port = this.port){
         
