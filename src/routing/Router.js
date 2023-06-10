@@ -5,6 +5,7 @@ import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { tag } from '../ui/index.js';
 import { staticServer } from './someTestMiddleware/staticServer.js';
+import qs from 'querystring';
 export {staticServer}
 
 export default class Routing{
@@ -264,16 +265,36 @@ export default class Routing{
             }
             const {result, params} = matchRoute(entries[i][0], route)
             req.params = params
-            if(match.result){
+            if(result){
                 route = this.normalizeRoute(entries[i][0])
                 if(req.method == "GET"){
                     if(this.routeContent[route].get){
                         return this.routeContent[route].get(req, res)
                     }
                 }else if(req.method == "POST"){
-                    if(this.routeContent[route].post){
-                        return this.routeContent[route].post(req, res)
+                    //check for actions
+                    if(req.headers['u-formaction']){
+                        const formAction = req.headers['u-formaction']
+                        let actionResponse =true
+
+                        if(this.routeContent[route] && this.routeContent[route].actions && this.routeContent[route].actions[formAction]){
+                            actionResponse = this.routeContent[route].actions[formAction](req, res)
+                        }else{
+                            
+                            return res.send(renderTemplate(this.getError(route)), 404)
+                        }
+                        if(!actionResponse) return 
+                        if(this.routeContent[route].index){
+                            return res.send(renderTemplate(this.getIndex(route)(req, res)), 200) 
+                        }else{
+                            return res.send(renderTemplate(this.getError(route)),404)
+                        } 
+                    }else{
+                        if(this.routeContent[route].post){
+                            return this.routeContent[route].post(req, res)
+                        }
                     }
+
             
                 }else if(req.method == "PUT"){
                     if(this.routeContent[route].put){
@@ -298,6 +319,8 @@ export default class Routing{
     async  requestHandler(req, res){
         //adds response methods 
         addResponseFunctions(req, res)
+        parseSearchParams(req, res)
+
         if(req.method == 'GET' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
             await this.pageRoutingHandler(req, res)
     
@@ -312,8 +335,54 @@ export default class Routing{
 }
 
 
+async function parseFormData(req, res){
+    if (req.method === 'POST' && req.headers['content-type'] && req.headers['content-type'].startsWith('application/x-www-form-urlencoded')) {
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk.toString();
+        });
+
+        const formData = {...qs.parse(body)};
+        req.formData = formData
+        console.log('formData: ', req.formData)
+        return true
+
+        // req.on('end', () => {
+        //   const formData = qs.parse(body);
+        //   console.log(formData);
+        //   // Do something with the form data here
+        //   res.end('Form submitted successfully');
+        // });
+      }
+    return false
+}
+
+async function parseSearchParams(req, res){
+    if(req.url.indexOf("?") > -1){
+        const query = new URLSearchParams(req.url.split('?')[1]);
+        req.url = req.url.split('?')[0]
+        const params = {};
+        for (const [key, value] of query) {
+          params[key] = value;
+        }
+        req.searchParams = {params}
+    }
 
 
+    // console.log('body: ',)
+    // let body = '';
+    // for await (const chunk of req) {
+    //   body += chunk;
+    // }
+    // try {
+    //   const data = JSON.parse(body);
+    //   req.body = data
+    //   console.log(data);
+    // } catch (error) {
+    //   console.error('Error parsing JSON:', error);
+    //   res.send('Invalid JSON', 400)
+    // }
+}
 
 
 
@@ -377,7 +446,6 @@ function matchRoute(path, route){
             }
         }
     }
-    console.log('params: ', params)
     return {result, params}
 }
 

@@ -91,6 +91,7 @@ const handleRequestedData = async(res, targetLayout) =>{
     }    
     
     registerClick()
+    registerFormAction()
 }
 
 function registerClick(){
@@ -99,6 +100,62 @@ function registerClick(){
     })
 }
 registerClick()
+registerFormAction()
+function registerFormAction(){
+    console.log('forms', document.forms)
+    Array.from(document.forms).map(form =>{
+        form.addEventListener('submit', handleFormAction)
+    })
+
+}
+async function handleFormAction(event){
+    event.preventDefault()
+    const route = event.target.getAttribute('action')
+    const targetId = findTargetLayout(route)
+        if(route.startsWith('.')) route = route.slice(1)
+
+
+        console.log("hrefffff: ", route)
+        const url = new URL("https://www.abc.com/"+route)
+        
+        
+        let formAction = url.searchParams.get('action')? url.searchParams.get("action") : 'default'
+        const formData = await new FormData(event.target);
+
+        fetch(window.location.origin+route, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'u-formaction': formAction
+            } 
+
+        }).then(response => {
+            if (response.ok) {
+                 return response.text();
+            } else {
+                throw new Error('Network response was not ok');
+            }
+        }).then(data => {
+            document.getElementById('content-'+targetId).innerHTML = data
+            registerFormAction()
+        }).catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+            document.getElementById('content-'+targetId).innerHTML = error
+        });
+
+}
+
+
+
+
+// forms.map(form=>{
+//     form.addEventListener('submit', event=>{
+//         console.log('form submited')
+//         event.preventDefault()
+//     })
+// })
+
+
 
         
         
