@@ -1,12 +1,15 @@
 import { readdir } from 'fs/promises';
 import { renderScripts, renderTemplate } from '../ui/index.js';
 import http from 'http'
-import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { tag } from '../ui/index.js';
+<<<<<<< HEAD
 import { staticServer } from './someTestMiddleware/staticServer.js';
 import qs from 'querystring';
 export {staticServer}
+=======
+export { staticServer } from './someTestMiddleware/staticServer.js';
+>>>>>>> f2bbaa4aa8dfa5c6e437fdc02119bb111fc5c1a7
 
 export default class Routing{
 
