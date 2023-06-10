@@ -5,6 +5,24 @@ a[href] * {
 }    
 </style>
 `
+
+registerClick()
+registerFormAction()
+
+function registerClick(){
+    document.querySelectorAll('a[href]').forEach(element=>{  
+        element.addEventListener('click', handleLinkClick)
+    })
+}
+
+function registerFormAction(){
+    console.log('forms', document.forms)
+    Array.from(document.forms).map(form =>{
+        form.addEventListener('submit', handleFormAction)
+    })
+}
+
+
 function locationHandler(url){
     console.log('location changes to : ', url)
     console.log( window)
@@ -94,75 +112,35 @@ const handleRequestedData = async(res, targetLayout) =>{
     registerFormAction()
 }
 
-function registerClick(){
-    document.querySelectorAll('a[href]').forEach(element=>{  
-        element.addEventListener('click', handleLinkClick)
-    })
-}
-registerClick()
-registerFormAction()
-function registerFormAction(){
-    console.log('forms', document.forms)
-    Array.from(document.forms).map(form =>{
-        form.addEventListener('submit', handleFormAction)
-    })
 
-}
 async function handleFormAction(event){
     event.preventDefault()
     const route = event.target.getAttribute('action')
     const targetId = findTargetLayout(route)
-        if(route.startsWith('.')) route = route.slice(1)
-
-
-        console.log("hrefffff: ", route)
-        const url = new URL("https://www.abc.com/"+route)
-        
-        
-        let formAction = url.searchParams.get('action')? url.searchParams.get("action") : 'default'
-        const formData =  new FormData(event.target);
-        const formEntries = Object.fromEntries(formData)
-        const formEntriesJson = JSON.stringify(formEntries)
-        console.log('form data json: ', formEntriesJson)
-
-        fetch(window.location.origin+route, {
-            method: 'POST',
-            body: formEntriesJson,
-            headers: {
-                'u-formaction': formAction,
-                'Content-Type': 'application/json',
-            } 
-
-        }).then(response => {
-            if (response.ok) {
-                 return response.text();
-            } else {
-                throw new Error('Network response was not ok');
-            }
-        }).then(data => {
-            document.getElementById('content-'+targetId).innerHTML = data
-            registerFormAction()
-        }).catch(error => {
-            console.error('There was a problem with the fetch operation:', error);
-            document.getElementById('content-'+targetId).innerHTML = error
-        });
+    if(route.startsWith('.')) route = route.slice(1)
+    const url = new URL("https://www.abc.com/"+route)
+    let formAction = url.searchParams.get('action')? url.searchParams.get("action") : 'default'
+    const formData =  new FormData(event.target);
+    const formEntries = Object.fromEntries(formData)
+    const formEntriesJson = JSON.stringify(formEntries)
+    fetch(window.location.origin+route, {
+        method: 'POST',
+        body: formEntriesJson,
+        headers: {
+            'u-formaction': formAction,
+            'Content-Type': 'application/json',
+        } 
+    }).then(response => {
+        if (response.ok) {
+             return response.text();
+        } else {
+            throw new Error('Network response was not ok');
+        }
+    }).then(data => {
+        document.getElementById('content-'+targetId).innerHTML = data
+        registerFormAction()
+    }).catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+        document.getElementById('content-'+targetId).innerHTML = error
+    });
 }
-
-
-
-
-// forms.map(form=>{
-//     form.addEventListener('submit', event=>{
-//         console.log('form submited')
-//         event.preventDefault()
-//     })
-// })
-
-
-
-        
-        
-        
-    
-    
-    

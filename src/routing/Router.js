@@ -316,6 +316,7 @@ export default class Routing{
         res.setStatus(402).json({'message': '404 page not found'})
             
     }
+   // checks if the request is a api requst or it is browser request
     async  requestHandler(req, res){
         //adds response methods 
         await parseBody(req, res)
@@ -382,13 +383,6 @@ async function parseSearchParams(req, res){
     //   res.send('Invalid JSON', 400)
     // }
 }
-
-
-
-
-
-// checks if the request is a api requst or it is browser request
-//adds some method to request
 
 // some fuction for sending respons to browser
 function addResponseFunctions(req, res){
