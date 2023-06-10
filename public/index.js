@@ -120,13 +120,17 @@ async function handleFormAction(event){
         
         
         let formAction = url.searchParams.get('action')? url.searchParams.get("action") : 'default'
-        const formData = await new FormData(event.target);
+        const formData =  new FormData(event.target);
+        const formEntries = Object.fromEntries(formData)
+        const formEntriesJson = JSON.stringify(formEntries)
+        console.log('form data json: ', formEntriesJson)
 
         fetch(window.location.origin+route, {
             method: 'POST',
-            body: formData,
+            body: formEntriesJson,
             headers: {
-                'u-formaction': formAction
+                'u-formaction': formAction,
+                'Content-Type': 'application/json',
             } 
 
         }).then(response => {
@@ -142,7 +146,6 @@ async function handleFormAction(event){
             console.error('There was a problem with the fetch operation:', error);
             document.getElementById('content-'+targetId).innerHTML = error
         });
-
 }
 
 

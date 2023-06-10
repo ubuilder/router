@@ -8,6 +8,7 @@ export const actions = {
     },
     register: (req, res)=>{
         console.log('register actions callled')
+        console.log('form data: ', req.body)
         res.setStatus(200).json({message: 'ok'})
         return false
 
@@ -16,7 +17,7 @@ export const actions = {
 
 export default function(req){
     
-    return tag('form', {method: 'post', action: '/login?action=registe'}, [
+    return tag('form', {method: 'post', action: '/login?action=register'}, [
         req.loggedIn? tag('div', {}, 'logged in'): '',
         tag('label', { for: 'username' }, 'Username: '),
         tag('input', { type: 'text', id: 'username', name: 'username' }),

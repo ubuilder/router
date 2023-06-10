@@ -318,8 +318,10 @@ export default class Routing{
     }
     async  requestHandler(req, res){
         //adds response methods 
+        await parseBody(req, res)
+        await parseFormData(req, res)
         addResponseFunctions(req, res)
-        parseSearchParams(req, res)
+        await parseSearchParams(req, res)
 
         if(req.method == 'GET' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
             await this.pageRoutingHandler(req, res)
@@ -336,25 +338,22 @@ export default class Routing{
 
 
 async function parseFormData(req, res){
-    if (req.method === 'POST' && req.headers['content-type'] && req.headers['content-type'].startsWith('application/x-www-form-urlencoded')) {
-        let body = '';
-        req.on('data', chunk => {
-          body += chunk.toString();
-        });
+    if (req.headers['u-formaction']) {
+        req.body = {...req.body, formData : JSON.stringify(req.body)}
+    }
+}
 
-        const formData = {...qs.parse(body)};
-        req.formData = formData
-        console.log('formData: ', req.formData)
-        return true
-
-        // req.on('end', () => {
-        //   const formData = qs.parse(body);
-        //   console.log(formData);
-        //   // Do something with the form data here
-        //   res.end('Form submitted successfully');
-        // });
-      }
-    return false
+async function parseBody(req, res){
+    let body = '';
+    try {
+        for await (const chunk of req) {
+          body += chunk;
+        }
+        req.body = body
+    } catch (error) {
+      console.error('Error parsing body:', error);
+      res.send('Invalid body data', 400)
+    }
 }
 
 async function parseSearchParams(req, res){
