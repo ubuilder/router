@@ -1,54 +1,69 @@
 import { readdir } from 'fs/promises';
-import { renderScripts, renderTemplate } from '../ui/index.js';
+import { renderScripts, renderTemplate ,renderHead} from '../ui/index.js';
 import http from 'http'
 import { resolve } from 'path';
-import { tag } from '../ui/index.js';
+import mainLayout from './mainLayout.js';
+import { tag ,html} from '../ui/index.js';
 export { staticServer } from './someTestMiddleware/staticServer.js';
 
 export default class Routing{
 
     //routeContent is an object that the keys are routes and the values are route handlers functions 
-    static routeContent={}
-    static route
-    static routesFolder
-    static port
-    static host
+    routeContent={}
+    route
+    routesFolder
+    port
+    host
 
-    constructor({host, port, routes, ...rest}){
-        this.routesFolder = routes
-        this.host = host
-        this.port = port
-        this.registerFileBasedRoutes(routes)
-        this.startServer(host, port)
+    constructor(config){
+        if(config){
+            this.routesFolder = config.routes
+            this.host = config.host
+            this.port = config.port
+        }
+
+        this.addPage('mainLayout', mainLayout)
     }
+    startServer(host= this.host, port = this.port, callback){
+        
+        const app = http.createServer((req, res)=>this.requestHandler(req, res))
+        port = process.env.PORT || port|| 1000
+        host = host|| 'localhost';
+        app.listen(port, host, ()=>{
+            if(callback) callback();
+            else console.log(`app is listening on ${host}:${port}/`);
+                
+        })
+    }
+    
     //callbackhandler should return an object like this : {index: (prop)=>{}, layout?:(prop)=>{}}
-    static all(route, callbackHandler){
+    all(route, callbackHandler){
         this.routeContent[route] = {...this.routeContent[route], all: callbackHandler}
         console.log('all route registerd: ', route, this.routeContent[route])
     }
     //http request methods handler functions. they could be used to make API
-    static get(route, callbackHandler){
+    get(route, callbackHandler){
         this.routeContent[route] = {...this.routeContent[route], get: callbackHandler}
         console.log('get route registerd: ', route, this.routeContent[route])
     }
-    static post(route, callbackHandler){
+    post(route, callbackHandler){
         //
         this.routeContent[route] = {...this.routeContent[route], post: callbackHandler}
         console.log('post route registerd: ', route, this.routeContent[route])
     }
-    static put(route, callbackHandler){
+    put(route, callbackHandler){
         //
         this.routeContent[route] = {...this.routeContent[route], put: callbackHandler}
         console.log('put route registerd: ', route, this.routeContent[route])
     }
-    static delete(route, callbackHandler){
+    delete(route, callbackHandler){
         // 
         this.routeContent[route] = {...this.routeContent[route], del: callbackHandler}
         console.log('delete route registerd: ', route, this.routeContent[route])
     }
 
     //for adding middleware. the same as express
-    static use(callbackHandler){
+    use(callbackHandler){
         let i =0
         while(true){
             if(!this.routeContent[`middleware-${i}`]) break;
@@ -58,7 +73,7 @@ export default class Routing{
     }
 
     //remove the route and its handlers
-    static remove(route){
+    remove(route){
         delete this.routeContent[route]
         console.log(route, 'deleted')
     }
@@ -67,7 +82,7 @@ export default class Routing{
     //for addin a custom page route that maybe the page is not in the routes folder or any other
     // the page sould export a defalut function that return the content
     //page can also return these function : layout(), error(), actions, get(), post() ...
-    static async addPage(route, page){
+    async addPage(route, page){
         if(page.default){
             const {default: index, ...rest} = page
             this.routeContent[route] = {...this.routeContent[route] , index ,...rest}            
@@ -80,13 +95,12 @@ export default class Routing{
 
 
     //search and registers all routes in side the dir folder
-    static async registerFileBasedRoutes (dir){
+    async registerFileBasedRoutes (dir){
         const dirent = await readdir(dir, {withFileTypes: true, recursive: true});
         const file = await Promise.all(dirent.map(async dirent =>{
             if(dirent.isDirectory()){
                 await this.registerFileBasedRoutes(dir+'/'+ dirent.name)
             }else{
-                console.log('file scanned: ', dir + '/' + dirent.name)
                 
                 const res = resolve(dir, dirent.name )
                 let route = dir.slice(dir.indexOf('routes')+6)
@@ -95,18 +109,18 @@ export default class Routing{
                 if(dirent.name == 'index.js'){
                     const exports =  await import("file://"+ res)
                     const {default: index , ...rest} = exports
-                    Routing.routeContent[route]= Object.assign({index, ...rest}, Routing.routeContent[route]) 
+                    this.routeContent[route]= Object.assign({index, ...rest}, this.routeContent[route]) 
     
                 }else if(dirent.name == 'layout.js'){
                     const {default: layout , ...rest} = await import("file://"+ res)
-                    Routing.routeContent[route]= Object.assign({layout, ...rest}, Routing.routeContent[route]) 
+                    this.routeContent[route]= Object.assign({layout, ...rest}, this.routeContent[route]) 
     
                 }else if(dirent.name == 'error.js'){
                     const {default: error , ...rest} = await import("file://"+ res)
-                    Routing.routeContent[route]= Object.assign({error, ...rest}, Routing.routeContent[route]) 
+                    this.routeContent[route]= Object.assign({error, ...rest}, this.routeContent[route]) 
     
                 }else if(dirent.name == 'api.js'){
-                    Routing.routeContent[route]= Object.assign({ ...(await import("file://"+ res))}, Routing.routeContent[route]) 
+                    this.routeContent[route]= Object.assign({ ...(await import("file://"+ res))}, this.routeContent[route]) 
     
                 }
             }
@@ -119,15 +133,23 @@ export default class Routing{
     static wrapLayout(route, content){
         return tag('span', {id: 'layout-'+route}, content)
     }
-    static getLayout(route, content){
-        console.log('layout content: ', content)
-        if(Routing.routeContent[route] && Routing.routeContent[route].layout)
-            return this.wrapLayout(route, Routing.routeContent[route].layout(this.wrapContent(route, content)))   
+    getLoadFunction(route){
+        if(this.routeContent[route] && this.routeContent[route].actions?.load){
+            return this.routeContent[route].actions.load 
+        }else{
+            return false
+        }
+    }
+
+
+    getLayout(route, content){
+        if(this.routeContent[route] && this.routeContent[route].layout)
+            return Routing.wrapLayout(route, this.routeContent[route].layout(Routing.wrapContent(route, content)))   
         else 
             return content
     }
     // partial page requests need partial layouts
-    static getPartialLayouts(route, targetLayout, content){
+    getPartialLayouts(route, targetLayout, content){
         if(route == '' ) return content
         if(route == targetLayout) return content
         if(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)) == targetLayout) return this.getLayout(route, content)
@@ -135,20 +157,20 @@ export default class Routing{
         if(route == '/'){
             return this.getLayout(route, content)
         } 
-        if(Routing.routeContent[route] && Routing.routeContent[route].layout){
-            return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, Routing.routeContent[route].layout(content))
+        if(this.routeContent[route] && this.routeContent[route].layout){
+            return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, this.routeContent[route].layout(content))
         }else{
             return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, content)  
         }
     }
 
     // for none partial request hole the layout hirarchi until to the base layout should be called
-    static getLayouts(route, content){
+    getLayouts(route, content){
         if(route == '' ) return content
         if(route == '/'){
             return this.getLayout(route, content)
         } 
-        if(Routing.routeContent[route] && Routing.routeContent[route].layout){
+        if(this.routeContent[route] && this.routeContent[route].layout){
             return this.getLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)),  this.getLayout(route, content))
         }else{
             return this.getLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), content)  
@@ -156,164 +178,237 @@ export default class Routing{
     }
 
     
-    static getIndex(route){
-        console.log('getIndex at route: ', route)
-        
-        if(Routing.routeContent[route] && Routing.routeContent[route].index){
-            return Routing.routeContent[route].index 
+    getIndex(route){
+        if(this.routeContent[route] && this.routeContent[route].index){
+            return this.routeContent[route].index 
         }else{
             return false
         }
     }
-    static getError(route){
+    getError(route){
         if(route =='') return 'not found at all'
-        if(Routing.routeContent[route]?.error){
-            return Routing.routeContent[route].route
+        if(this.routeContent[route]?.error){
+            return this.routeContent[route].route
         }else{
             return this.getError(route.slice(0, (route.lastIndexOf('/') -1)))
         }
     }
-    static normalizeRoute(route){
+    normalizeRoute(route){
         if (route.endsWith('/')&& route.length > 1) route = route.slice(0, route.lastIndexOf('/'))
         return route
     }
-    static startServer(host, port){
-        const app = http.createServer(requestHandler)
-        port = process.env.PORT || port|| 1000
-        host = host|| 'localhost';
-        app.listen(port, host, ()=>{
-            console.log(`app is listening on ${host}:${port}/`)
-        })
-    }
     
+    // handle routing for page requests
+    async pageRoutingHandler(req, res){
+
+        let route = this.normalizeRoute(req.url)
+        var match
+        let entries = Object.entries(this.routeContent)
+
+        for(let i = 0 ; i<  entries.length ; i++){
+            //if the route  is a middleware
+            if(entries[i][0].startsWith('middleware-')){
+                //if the the middleware refuses the with false the the request does not proceed any more
+                //normally the middlewares should return true
+                const returned = await entries[i][1].middleware(req, res)
+                if(!returned) return
+                continue;
+            }
+
+            //if the route is route
+            const {result, params} = matchRoute(entries[i][0], route)
+            req.params = params
+
+            if(result){
+                route = this.normalizeRoute(entries[i][0])
+                //call the load function
+                let loadFunction = await this.getLoadFunction(route)
+                if(loadFunction) loadFunction(req, res)
+
+                let contentObject = this.getIndex(route)
+                
+                if(!contentObject) return res.send(this.getError(route))
+                
+                
+                let content = renderTemplate(contentObject(req))
+                let headContent = renderHead(contentObject(req))
+                let scriptContent = renderScripts(contentObject(req))
+
+                let layout
+                //for partial request it returns only pages with out layouts
+                if(req.headers['u-partial'] == 'true'){
+                    const targetLayout = req.headers['target-layout']
+                    layout =  this.getPartialLayouts(route, targetLayout, content)
+                    const layoutTemplate = renderTemplate(layout)
+                    
+                    scriptContent += renderScripts(layout)
+                    headContent +=renderHead(layout)
+
+                    const response = {
+                        template: layoutTemplate,
+                        headContent: headContent,
+                        script: scriptContent
+                    }
+                    return res.json(response, 200)
+                }
+
+                let response
+
+                if(content) {
+                    let layoutObject = this.getLayouts(route, content)
+                    scriptContent += renderScripts(layoutObject)
+                    headContent += renderHead(layoutObject)
+                    let head = headContent + `<script>${scriptContent}</script>`
+
+                    response = renderTemplate(this.routeContent['mainLayout'].index({head: head, body: layoutObject}))
+                }else{
+                    response = renderTemplate( this.getError(route).error(req.params))
+                }
+                res.send(response) 
+                return
+            }
+        }
+
+        let error = this.getError(route)
+        res.send(error, 404) 
+    }
+    //handle routing for api requests
+    async apiRoutingHandler(req, res){
+
+        let route = this.normalizeRoute(req.url)
+        var match
+        let entries = Object.entries(this.routeContent)
+    
+        for(let i = 0 ; i<  entries.length ; i++){
+            //if the route  is a middleware
+            if(entries[i][0].startsWith('middleware-')){
+                //if the the middleware refuses the with false the the request does not proceed any more
+                //normally the middlewares should return true
+                const returned = await entries[i][1].middleware(req, res)
+                if(!returned) return
+                continue;
+            }
+            const {result, params} = matchRoute(entries[i][0], route)
+            req.params = params
+            if(result){
+                route = this.normalizeRoute(entries[i][0])
+                if(req.method == "GET"){
+                    if(this.routeContent[route].get){
+                        return this.routeContent[route].get(req, res)
+                    }
+                }else if(req.method == "POST"){
+                    //check for actions
+                    if(req.headers['u-formaction']){
+                        let loadFunction = await this.getLoadFunction(route)
+                        if(loadFunction) loadFunction(req, res)
+                
+                        const formAction = req.headers['u-formaction']
+                        let actionResponse =true
+
+                        if(this.routeContent[route] && this.routeContent[route].actions && this.routeContent[route].actions[formAction]){
+                            actionResponse = this.routeContent[route].actions[formAction](req, res)
+                        }else{
+                            
+                            return res.send(renderTemplate(this.getError(route)), 404)
+                        }
+                        if(!actionResponse) return 
+                        if(this.routeContent[route].index){
+                            return res.send(renderTemplate(this.getIndex(route)(req, res)), 200) 
+                        }else{
+                            return res.send(renderTemplate(this.getError(route)),404)
+                        } 
+                    }else{
+                        if(this.routeContent[route].post){
+                            return this.routeContent[route].post(req, res)
+                        }
+                    }
+
+            
+                }else if(req.method == "PUT"){
+                    if(this.routeContent[route].put){
+                        return this.routeContent[route].put(req, res)
+                    }
+            
+                }else if(req.method == "DELETE"){
+                    if(this.routeContent[route].del){
+                        return this.routeContent[route].del(req, res)
+                    }
+                }
+    
+                // if no handler method found
+                res.json({'message': 'method not supported'}, 404)
+    
+                return 
+            }   
+        }
+        res.setStatus(402).json({'message': '404 page not found'})
+            
+    }
+   // checks if the request is a api requst or it is browser request
+    async  requestHandler(req, res){
+        //adds response methods 
+        await parseBody(req, res)
+        await parseFormData(req, res)
+        addResponseFunctions(req, res)
+        await parseSearchParams(req, res)
+
+        if(req.method == 'GET' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
+            await this.pageRoutingHandler(req, res)
+    
+        }else if(req.method == 'POST' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
+            await this.pageRoutingHandler(req, res)
+    
+        }else {
+            await this.apiRoutingHandler(req, res)
+        }
+    }
 }
 
 
-
-
-
-
-
-// handle routing for page requests
-async function pageRoutingHandler(req, res){
-
-    let route = Routing.normalizeRoute(req.url)
-    var match
-    let entries = Object.entries(Routing.routeContent)
-
-    for(let i = 0 ; i<  entries.length ; i++){
-        //if the route  is a middleware
-        if(entries[i][0].startsWith('middleware-')){
-            //if the the middleware refuses the with false the the request does not proceed any more
-            //normally the middlewares should return true
-            const returned = await entries[i][1].middleware(req, res)
-            if(!returned) return
-            continue;
-        }
-
-        //if the route is route
-        const {result, params} = matchRoute(entries[i][0], route)
-        req.params = params
-
-        if(result){
-            route = Routing.normalizeRoute(entries[i][0])
-            let content = Routing.getIndex(route)
-            if(!content) return res.send(Routing.getError(route))
-
-            content = renderTemplate(content(req))
-            let layout
-            //for partial request it returns only pages with out layouts
-            if(req.headers['u-partial'] == 'true'){
-                const targetLayout = req.headers['target-layout']
-                layout =  Routing.getPartialLayouts(route, targetLayout, content)
-                const layoutTemplate = renderTemplate(layout)
-                // const layoutStyle = renderStyle(layout)
-                const layoutScript = renderScripts(layout)
-                const response = {
-                    template: layoutTemplate,
-                    // style: layoutStyle,
-                    script: layoutScript
-                }
-                return res.json(response, 200)
-            }
-
-            if(content) {
-                layout = renderTemplate( Routing.getLayouts(route, content))
-            }else{
-                layout = renderTemplate( Routing.getError(route).error(req.params))
-            }
-            res.send(layout) 
-            return
-        }
+async function parseFormData(req, res){
+    if (req.headers['u-formaction']) {
+        req.formData = JSON.parse(req.body)
     }
-
-    let error = Routing.getError(route)
-    res.send(error, 404) 
 }
-//handle routing for api requests
-async function apiRoutingHandler(req, res){
 
-    let route = Routing.normalizeRoute(req.url)
-    var match
-    let entries = Object.entries(Routing.routeContent)
-
-    for(let i = 0 ; i<  entries.length ; i++){
-        //if the route  is a middleware
-        if(entries[i][0].startsWith('middleware-')){
-            //if the the middleware refuses the with false the the request does not proceed any more
-            //normally the middlewares should return true
-            const returned = await entries[i][1].middleware(req, res)
-            if(!returned) return
-            continue;
+async function parseBody(req, res){
+    let body = '';
+    try {
+        for await (const chunk of req) {
+          body += chunk;
         }
-        const {result, params} = matchRoute(entries[i][0], route)
-        req.params = params
-        if(match.result){
-            route = Routing.normalizeRoute(entries[i][0])
-            if(req.method == "GET"){
-                if(Routing.routeContent[route].get){
-                    return Routing.routeContent[route].get(req, res)
-                }
-            }else if(req.method == "POST"){
-                if(Routing.routeContent[route].post){
-                    return Routing.routeContent[route].post(req, res)
-                }
-        
-            }else if(req.method == "PUT"){
-                if(Routing.routeContent[route].put){
-                    return Routing.routeContent[route].put(req, res)
-                }
-        
-            }else if(req.method == "DELETE"){
-                if(Routing.routeContent[route].del){
-                    return Routing.routeContent[route].del(req, res)
-                }
-            }
-
-            // if no handler method found
-            res.json({'message': 'method not supported'}, 404)
-
-            return 
-        }   
+        req.body = body
+    } catch (error) {
+      console.error('Error parsing body:', error);
+      res.send('Invalid body data', 400)
     }
-    res.setStatus(402).json({'message': '404 page not found'})
-        
 }
-// checks if the request is a api requst or it is browser request
-//adds some method to request
-async function requestHandler(req, res){
-    //adds response methods 
-    addResponseFunctions(req, res)
-    if(req.method == 'GET' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
-        pageRoutingHandler(req, res)
 
-    }else if(req.method == 'POST' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
-        pageRoutingHandler(req, res)
-
-    }else {
-        console.log('apit routind')
-        apiRoutingHandler(req, res)
+async function parseSearchParams(req, res){
+    if(req.url.indexOf("?") > -1){
+        const query = new URLSearchParams(req.url.split('?')[1]);
+        req.url = req.url.split('?')[0]
+        const params = {};
+        for (const [key, value] of query) {
+          params[key] = value;
+        }
+        req.searchParams = {params}
     }
+
+
+    // console.log('body: ',)
+    // let body = '';
+    // for await (const chunk of req) {
+    //   body += chunk;
+    // }
+    // try {
+    //   const data = JSON.parse(body);
+    //   req.body = data
+    //   console.log(data);
+    // } catch (error) {
+    //   console.error('Error parsing JSON:', error);
+    //   res.send('Invalid JSON', 400)
+    // }
 }
 
 // some fuction for sending respons to browser
@@ -350,7 +445,6 @@ function matchRoute(path, route){
     var pathArray = path.split('/')
 
     for(let i=0;i<  routeArray.length; i++){
-        console.log('matching(path - route) : ',pathArray[i],routeArray[i])
         if(pathArray[i] != routeArray[i]){
             if(/^(?!\[\.\.\.)\[(.+?)\]/g.test(pathArray[i]) && routeArray[i]){
                 pathArray[i] = pathArray[i].replace(/\[(.+?)\]/g, (match, p1)=>{
@@ -358,7 +452,6 @@ function matchRoute(path, route){
                     return match
                 })
             }else if(/\[\.\.\.(.+?)\]*\]/g.test(pathArray[i]) ){
-                console.log('rest matching')
                 pathArray[i] = pathArray[i].replace(/\[\.\.\.(.+?)\]*\]/g, (match, p1)=>{
                     return match
                 })
@@ -371,7 +464,6 @@ function matchRoute(path, route){
             }
         }
     }
-    console.log('params: ', params)
     return {result, params}
 }
 
