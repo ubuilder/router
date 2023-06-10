@@ -8,4 +8,9 @@ export function error(prop){
     return tag('div', {}, 'error ocured')
 }
 
+export let actions = {
+    load: async (req)=>{
+        console.log('load function called')
+    }
+}
 

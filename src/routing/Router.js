@@ -132,6 +132,15 @@ export default class Routing{
     static wrapLayout(route, content){
         return tag('span', {id: 'layout-'+route}, content)
     }
+    getLoadFunction(route){
+        if(this.routeContent[route] && this.routeContent[route].actions?.load){
+            return this.routeContent[route].actions.load 
+        }else{
+            return false
+        }
+    }
+
+
     getLayout(route, content){
         if(this.routeContent[route] && this.routeContent[route].layout)
             return Routing.wrapLayout(route, this.routeContent[route].layout(Routing.wrapContent(route, content)))   
@@ -227,6 +236,10 @@ export default class Routing{
 
             if(result){
                 route = this.normalizeRoute(entries[i][0])
+                //call the load function
+                let loadFunction = await this.getLoadFunction(route)
+                if(loadFunction) loadFunction(req, res)
+
                 let contentObject = this.getIndex(route)
                 
                 if(!contentObject) return res.send(this.getError(route))
@@ -301,6 +314,9 @@ export default class Routing{
                 }else if(req.method == "POST"){
                     //check for actions
                     if(req.headers['u-formaction']){
+                        let loadFunction = await this.getLoadFunction(route)
+                        if(loadFunction) loadFunction(req, res)
+                
                         const formAction = req.headers['u-formaction']
                         let actionResponse =true
 

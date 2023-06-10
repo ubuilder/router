@@ -12,7 +12,11 @@ export const actions = {
         res.setStatus(200).json({message: 'ok'})
         return false
 
+    },
+    load: async (req, res)=>{
+        console.log('load function called in login')
     }
+
 }
 
 export default function(req){
