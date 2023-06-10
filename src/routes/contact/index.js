@@ -10,7 +10,6 @@ export default function(prop){
             tag('a', {href: './'}, 'home'),
             tag('a', {href: './about/sponser'}, 'sponser'),
         ]),
-        tag('div', {}, prop)
-
+        tag('div', {}, `contact`)
     ])
 }

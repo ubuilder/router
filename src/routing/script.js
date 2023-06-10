@@ -6,8 +6,6 @@ a[href] * {
 </style>
 `
 
-registerClick()
-registerFormAction()
 
 function registerClick(){
     document.querySelectorAll('a[href]').forEach(element=>{  
@@ -71,43 +69,44 @@ const handleLinkClick = async (event)=>{
     let targetLayout = userSpecifiedTargetLayout? userSpecifiedTargetLayout: autoSpecifiedTargetLayout
     console.log('target layout requested: ', targetLayout)
 
-    let res = await request(route, targetLayout)
-    handleRequestedData(res, targetLayout)
+    await handleRequestedData(route, targetLayout)
 }
-const handleRequestedData = async(res, targetLayout) =>{
-    if(!res.ok) {
-        // handle error
-        return document.getElementById('content-'+targetLayout).innerHTML = res.error
-    }
-    let {template, style, script} = await res.json()
+const handleRequestedData = async(route, targetLayout) =>{
+    await request(route, targetLayout)
+    .then(res =>{
+        if(res.ok) {
+            return res.json()
+        }else{
+            throw new Error('Response was not ok')
+        }
+    })
+    .then(({template, headContent, script}) =>{
+        // template 
+        document.getElementById('content-'+targetLayout).innerHTML = template;
+        //style
+        const head = document.getElementsByTagName('head')[0]
+        head.innerHTML = head.innerHTML + headContent
+        
+        console.log('heml head: ', headContent)
+        console.log('script: ', script)
+        
+        //javascript
+        const isScript = document.getElementById( 'script-'+targetLayout)
+        if(isScript){
+            isScript.innerHTML = script
+        }else{
+            let body = document.getElementsByTagName('body')[0]
+            let js = document.createElement('script')
+            js.id = "script-"+targetLayout
+            js.innerHTML = script
+            body.appendChild(js)
+        }  
 
-    // template 
-    document.getElementById('content-'+targetLayout).innerHTML = template
-    
-    //style
-    const isStyle = document.getElementById( 'style-'+targetLayout)
-    if(isStyle){
-        isStyle.innerHTML = style
-    }else{
-        let head = document.getElementsByTagName('head')[0]
-        let css = document.createElement('style')
-        css.id = "style-"+targetLayout
-        css.innerHTML = style
-        head.appendChild(css)
-    }
-    
-    //javascript
-    const isScript = document.getElementById( 'script-'+targetLayout)
-    if(isScript){
-        isScript.innerHTML = style
-    }else{
-        let body = document.getElementsByTagName('body')[0]
-        let js = document.createElement('script')
-        js.id = "script-"+targetLayout
-        js.innerHTML = style
-        body.appendChild(js)
-    }    
-    
+    })
+    .catch( error =>{
+        console.log('Error: ', error)
+        return document.getElementById('content-'+targetLayout).innerHTML = error
+    })
     registerClick()
     registerFormAction()
 }
@@ -144,3 +143,7 @@ async function handleFormAction(event){
         document.getElementById('content-'+targetId).innerHTML = error
     });
 }
+
+
+registerClick()
+registerFormAction()

@@ -1,15 +1,10 @@
 import { readdir } from 'fs/promises';
-import { renderScripts, renderTemplate } from '../ui/index.js';
+import { renderScripts, renderTemplate ,renderHead} from '../ui/index.js';
 import http from 'http'
 import { resolve } from 'path';
-import { tag } from '../ui/index.js';
-<<<<<<< HEAD
-import { staticServer } from './someTestMiddleware/staticServer.js';
-import qs from 'querystring';
-export {staticServer}
-=======
+import mainLayout from './mainLayout.js';
+import { tag ,html} from '../ui/index.js';
 export { staticServer } from './someTestMiddleware/staticServer.js';
->>>>>>> f2bbaa4aa8dfa5c6e437fdc02119bb111fc5c1a7
 
 export default class Routing{
 
@@ -26,6 +21,8 @@ export default class Routing{
             this.host = config.host
             this.port = config.port
         }
+
+        this.addPage('mainLayout', mainLayout)
     }
     startServer(host= this.host, port = this.port){
         
@@ -136,7 +133,6 @@ export default class Routing{
         return tag('span', {id: 'layout-'+route}, content)
     }
     getLayout(route, content){
-        console.log('layout content: ', content)
         if(this.routeContent[route] && this.routeContent[route].layout)
             return Routing.wrapLayout(route, this.routeContent[route].layout(Routing.wrapContent(route, content)))   
         else 
@@ -173,8 +169,6 @@ export default class Routing{
 
     
     getIndex(route){
-        console.log('getIndex at route: ', route)
-        
         if(this.routeContent[route] && this.routeContent[route].index){
             return this.routeContent[route].index 
         }else{
@@ -192,6 +186,22 @@ export default class Routing{
     normalizeRoute(route){
         if (route.endsWith('/')&& route.length > 1) route = route.slice(0, route.lastIndexOf('/'))
         return route
+    }
+    makePartialResponse(layout, content){
+        let template 
+        let script
+        let headContent
+        template = renderTemplate(content)
+        template += renderTemplate(layout)
+
+        script = renderScripts(content)
+        script = renderScripts(layout)
+
+        headContent = renderHead(content)
+        headContent = renderHead(layout)
+        content = renderTemplate(contentObject(req))
+
+        return {template, script, headContent}
     }
     
     // handle routing for page requests
@@ -217,32 +227,46 @@ export default class Routing{
 
             if(result){
                 route = this.normalizeRoute(entries[i][0])
-                let content = this.getIndex(route)
-                if(!content) return res.send(this.getError(route))
+                let contentObject = this.getIndex(route)
+                
+                if(!contentObject) return res.send(this.getError(route))
+                
+                
+                let content = renderTemplate(contentObject(req))
+                let headContent = renderHead(contentObject(req))
+                let scriptContent = renderScripts(contentObject(req))
 
-                content = renderTemplate(content(req))
                 let layout
                 //for partial request it returns only pages with out layouts
                 if(req.headers['u-partial'] == 'true'){
                     const targetLayout = req.headers['target-layout']
                     layout =  this.getPartialLayouts(route, targetLayout, content)
                     const layoutTemplate = renderTemplate(layout)
-                    // const layoutStyle = renderStyle(layout)
-                    const layoutScript = renderScripts(layout)
+                    
+                    scriptContent += renderScripts(layout)
+                    headContent +=renderHead(layout)
+
                     const response = {
                         template: layoutTemplate,
-                        // style: layoutStyle,
-                        script: layoutScript
+                        headContent: headContent,
+                        script: scriptContent
                     }
                     return res.json(response, 200)
                 }
 
+                let response
+
                 if(content) {
-                    layout = renderTemplate( this.getLayouts(route, content))
+                    let layoutObject = this.getLayouts(route, content)
+                    scriptContent += renderScripts(layoutObject)
+                    headContent += renderHead(layoutObject)
+                    let head = headContent + `<script>${scriptContent}</script>`
+
+                    response = renderTemplate(this.routeContent['mainLayout'].index({head: head, body: layoutObject}))
                 }else{
-                    layout = renderTemplate( this.getError(route).error(req.params))
+                    response = renderTemplate( this.getError(route).error(req.params))
                 }
-                res.send(layout) 
+                res.send(response) 
                 return
             }
         }
@@ -334,7 +358,7 @@ export default class Routing{
             await this.pageRoutingHandler(req, res)
     
         }else {
-            console.log('apit routind')
+            console.log('api routind')
             await this.apiRoutingHandler(req, res)
         }
     }

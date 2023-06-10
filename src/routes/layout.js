@@ -16,7 +16,7 @@ export default function(content){
             ]),
             tag('div', {}, tag('h1', { style: 'backgroud-color:rgba(100,0,10, 0.5) '}, content)),
             tag('div', {id: 'data-target'}, ),
-            tag('script', {src: 'http://localhost:1000/index.js'},  )
+            
         ]
     )
 }

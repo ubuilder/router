@@ -55,7 +55,7 @@ export function renderHead(object) {
   if (typeof object === "object") {
     const { tag, slots, props } = object;
 
-    return [props.htmlHead ?? "", ...slots.map((slot) => renderHead(slot))]
+    return [props?.htmlHead ?? "", ...slots?.map((slot) => renderHead(slot))]
       .join("\n")
       .trim();
   }
