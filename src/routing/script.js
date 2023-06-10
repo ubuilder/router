@@ -14,7 +14,6 @@ function registerClick(){
 }
 
 function registerFormAction(){
-    console.log('forms', document.forms)
     Array.from(document.forms).map(form =>{
         form.addEventListener('submit', handleFormAction)
     })
@@ -23,7 +22,6 @@ function registerFormAction(){
 
 function locationHandler(url){
     console.log('location changes to : ', url)
-    console.log( window)
     window.history.pushState("object or string", "Title", window.location.origin+url);
 }
 
@@ -40,7 +38,6 @@ async function request(url, originLayout){
 }    
 
 function findTargetLayout(route){
-    console.log("route; ", route)
     if(route.startsWith('.')) 
         route = route.slice(1)
     if(route.lastIndexOf('?') > -1)
@@ -51,7 +48,6 @@ function findTargetLayout(route){
         route = route.slice(0, route.length -1)
 
     route = route.slice(0, route.lastIndexOf('/') == 0? 1 : route.lastIndexOf('/') )
-    console.log('finding element: ', 'content-'+route)
     const targetElement = document.getElementById('content-'+route)
     if(targetElement)
         return route
@@ -67,7 +63,6 @@ const handleLinkClick = async (event)=>{
     let autoSpecifiedTargetLayout = findTargetLayout(route)
     
     let targetLayout = userSpecifiedTargetLayout? userSpecifiedTargetLayout: autoSpecifiedTargetLayout
-    console.log('target layout requested: ', targetLayout)
 
     await handleRequestedData(route, targetLayout)
 }
@@ -81,27 +76,24 @@ const handleRequestedData = async(route, targetLayout) =>{
         }
     })
     .then(({template, headContent, script}) =>{
+        let target = document.getElementById('content-'+targetLayout)
+        let js = document.createElement('script')
+        let hd = document.createElement('span')
+        hd.innerHTML = headContent
+        js.innerHTML = script
+
         // template 
-        document.getElementById('content-'+targetLayout).innerHTML = template;
+        target.innerHTML = template
+        target.firstChild.addEventListener('DOMNodeRemoved', event=>{
+            console.log('loaded element removed')
+            document.head.removeChild(hd)
+            document.body.removeChild(js)
+        })
         //style
-        const head = document.getElementsByTagName('head')[0]
-        head.innerHTML = head.innerHTML + headContent
-        
-        console.log('heml head: ', headContent)
-        console.log('script: ', script)
+        document.head.appendChild(hd)
         
         //javascript
-        const isScript = document.getElementById( 'script-'+targetLayout)
-        if(isScript){
-            isScript.innerHTML = script
-        }else{
-            let body = document.getElementsByTagName('body')[0]
-            let js = document.createElement('script')
-            js.id = "script-"+targetLayout
-            js.innerHTML = script
-            body.appendChild(js)
-        }  
-
+        document.body.appendChild(js)
     })
     .catch( error =>{
         console.log('Error: ', error)

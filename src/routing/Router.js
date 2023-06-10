@@ -24,13 +24,15 @@ export default class Routing{
 
         this.addPage('mainLayout', mainLayout)
     }
-    startServer(host= this.host, port = this.port){
+    startServer(host= this.host, port = this.port, callback){
         
         const app = http.createServer((req, res)=>this.requestHandler(req, res))
         port = process.env.PORT || port|| 1000
         host = host|| 'localhost';
         app.listen(port, host, ()=>{
-            console.log(`app is listening on ${host}:${port}/`)
+            if(callback) callback();
+            else console.log(`app is listening on ${host}:${port}/`);
+                
         })
     }
     
@@ -99,7 +101,6 @@ export default class Routing{
             if(dirent.isDirectory()){
                 await this.registerFileBasedRoutes(dir+'/'+ dirent.name)
             }else{
-                console.log('file scanned: ', dir + '/' + dirent.name)
                 
                 const res = resolve(dir, dirent.name )
                 let route = dir.slice(dir.indexOf('routes')+6)
@@ -195,22 +196,6 @@ export default class Routing{
     normalizeRoute(route){
         if (route.endsWith('/')&& route.length > 1) route = route.slice(0, route.lastIndexOf('/'))
         return route
-    }
-    makePartialResponse(layout, content){
-        let template 
-        let script
-        let headContent
-        template = renderTemplate(content)
-        template += renderTemplate(layout)
-
-        script = renderScripts(content)
-        script = renderScripts(layout)
-
-        headContent = renderHead(content)
-        headContent = renderHead(layout)
-        content = renderTemplate(contentObject(req))
-
-        return {template, script, headContent}
     }
     
     // handle routing for page requests
@@ -374,7 +359,6 @@ export default class Routing{
             await this.pageRoutingHandler(req, res)
     
         }else {
-            console.log('api routind')
             await this.apiRoutingHandler(req, res)
         }
     }
@@ -383,7 +367,7 @@ export default class Routing{
 
 async function parseFormData(req, res){
     if (req.headers['u-formaction']) {
-        req.body = {...req.body, formData : JSON.stringify(req.body)}
+        req.formData = JSON.parse(req.body)
     }
 }
 
@@ -461,7 +445,6 @@ function matchRoute(path, route){
     var pathArray = path.split('/')
 
     for(let i=0;i<  routeArray.length; i++){
-        console.log('matching(path - route) : ',pathArray[i],routeArray[i])
         if(pathArray[i] != routeArray[i]){
             if(/^(?!\[\.\.\.)\[(.+?)\]/g.test(pathArray[i]) && routeArray[i]){
                 pathArray[i] = pathArray[i].replace(/\[(.+?)\]/g, (match, p1)=>{
@@ -469,7 +452,6 @@ function matchRoute(path, route){
                     return match
                 })
             }else if(/\[\.\.\.(.+?)\]*\]/g.test(pathArray[i]) ){
-                console.log('rest matching')
                 pathArray[i] = pathArray[i].replace(/\[\.\.\.(.+?)\]*\]/g, (match, p1)=>{
                     return match
                 })

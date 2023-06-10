@@ -1,7 +1,7 @@
 import { tag } from "../ui/index.js";
 
 export default function(prop){
-    return tag('div', {}, 'hellow world this is home page')
+    return tag('div', {htmlHead: '<title>ubuilder cms</title>'}, 'hellow world this is home page')
 }
 
 export function error(prop){

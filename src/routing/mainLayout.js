@@ -5,7 +5,6 @@ async function read(url){
     try {
         url = new URL(url, import.meta.url)
         const data = await readFile(url, {encoding:'utf8'})
-        console.log("script read")
         return data
     } catch (error) {
         console.log('Error reading router script: ', error)
