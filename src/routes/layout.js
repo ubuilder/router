@@ -1,7 +1,6 @@
 import {tag } from "../ui/index.js";
 
 export default function(content){
-    console.log('layout: ', content)
     return tag('main', {style: 'background-color: rgba(200,200,200, 0.2)'}, 
         [
             tag('header', {class: "header"}, 'hellow: wellcom to ubuildercms'),
@@ -16,7 +15,7 @@ export default function(content){
             ]),
             tag('div', {}, tag('h1', { style: 'backgroud-color:rgba(100,0,10, 0.5) '}, content)),
             tag('div', {id: 'data-target'}, ),
-            tag('script', {src: 'http://localhost:1000/index.js'},  )
+            
         ]
     )
 }

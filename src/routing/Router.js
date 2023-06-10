@@ -1,11 +1,10 @@
 import { readdir } from 'fs/promises';
-import { renderScripts, renderTemplate } from '../ui/index.js';
+import { renderScripts, renderTemplate ,renderHead} from '../ui/index.js';
 import http from 'http'
-import { readFile } from 'fs/promises';
 import { resolve } from 'path';
-import { tag } from '../ui/index.js';
-import { staticServer } from './someTestMiddleware/staticServer.js';
-export {staticServer}
+import mainLayout from './mainLayout.js';
+import { tag ,html} from '../ui/index.js';
+export { staticServer } from './someTestMiddleware/staticServer.js';
 
 export default class Routing{
 
@@ -22,14 +21,18 @@ export default class Routing{
             this.host = config.host
             this.port = config.port
         }
+
+        this.addPage('mainLayout', mainLayout)
     }
-    startServer(host= this.host, port = this.port){
+    startServer(host= this.host, port = this.port, callback){
         
         const app = http.createServer((req, res)=>this.requestHandler(req, res))
         port = process.env.PORT || port|| 1000
         host = host|| 'localhost';
         app.listen(port, host, ()=>{
-            console.log(`app is listening on ${host}:${port}/`)
+            if(callback) callback();
+            else console.log(`app is listening on ${host}:${port}/`);
+                
         })
     }
     
@@ -98,7 +101,6 @@ export default class Routing{
             if(dirent.isDirectory()){
                 await this.registerFileBasedRoutes(dir+'/'+ dirent.name)
             }else{
-                console.log('file scanned: ', dir + '/' + dirent.name)
                 
                 const res = resolve(dir, dirent.name )
                 let route = dir.slice(dir.indexOf('routes')+6)
@@ -131,8 +133,16 @@ export default class Routing{
     static wrapLayout(route, content){
         return tag('span', {id: 'layout-'+route}, content)
     }
+    getLoadFunction(route){
+        if(this.routeContent[route] && this.routeContent[route].actions?.load){
+            return this.routeContent[route].actions.load 
+        }else{
+            return false
+        }
+    }
+
+
     getLayout(route, content){
-        console.log('layout content: ', content)
         if(this.routeContent[route] && this.routeContent[route].layout)
             return Routing.wrapLayout(route, this.routeContent[route].layout(Routing.wrapContent(route, content)))   
         else 
@@ -169,8 +179,6 @@ export default class Routing{
 
     
     getIndex(route){
-        console.log('getIndex at route: ', route)
-        
         if(this.routeContent[route] && this.routeContent[route].index){
             return this.routeContent[route].index 
         }else{
@@ -213,32 +221,50 @@ export default class Routing{
 
             if(result){
                 route = this.normalizeRoute(entries[i][0])
-                let content = this.getIndex(route)
-                if(!content) return res.send(this.getError(route))
+                //call the load function
+                let loadFunction = await this.getLoadFunction(route)
+                if(loadFunction) loadFunction(req, res)
 
-                content = renderTemplate(content(req))
+                let contentObject = this.getIndex(route)
+                
+                if(!contentObject) return res.send(this.getError(route))
+                
+                
+                let content = renderTemplate(contentObject(req))
+                let headContent = renderHead(contentObject(req))
+                let scriptContent = renderScripts(contentObject(req))
+
                 let layout
                 //for partial request it returns only pages with out layouts
                 if(req.headers['u-partial'] == 'true'){
                     const targetLayout = req.headers['target-layout']
                     layout =  this.getPartialLayouts(route, targetLayout, content)
                     const layoutTemplate = renderTemplate(layout)
-                    // const layoutStyle = renderStyle(layout)
-                    const layoutScript = renderScripts(layout)
+                    
+                    scriptContent += renderScripts(layout)
+                    headContent +=renderHead(layout)
+
                     const response = {
                         template: layoutTemplate,
-                        // style: layoutStyle,
-                        script: layoutScript
+                        headContent: headContent,
+                        script: scriptContent
                     }
                     return res.json(response, 200)
                 }
 
+                let response
+
                 if(content) {
-                    layout = renderTemplate( this.getLayouts(route, content))
+                    let layoutObject = this.getLayouts(route, content)
+                    scriptContent += renderScripts(layoutObject)
+                    headContent += renderHead(layoutObject)
+                    let head = headContent + `<script>${scriptContent}</script>`
+
+                    response = renderTemplate(this.routeContent['mainLayout'].index({head: head, body: layoutObject}))
                 }else{
-                    layout = renderTemplate( this.getError(route).error(req.params))
+                    response = renderTemplate( this.getError(route).error(req.params))
                 }
-                res.send(layout) 
+                res.send(response) 
                 return
             }
         }
@@ -264,16 +290,39 @@ export default class Routing{
             }
             const {result, params} = matchRoute(entries[i][0], route)
             req.params = params
-            if(match.result){
+            if(result){
                 route = this.normalizeRoute(entries[i][0])
                 if(req.method == "GET"){
                     if(this.routeContent[route].get){
                         return this.routeContent[route].get(req, res)
                     }
                 }else if(req.method == "POST"){
-                    if(this.routeContent[route].post){
-                        return this.routeContent[route].post(req, res)
+                    //check for actions
+                    if(req.headers['u-formaction']){
+                        let loadFunction = await this.getLoadFunction(route)
+                        if(loadFunction) loadFunction(req, res)
+                
+                        const formAction = req.headers['u-formaction']
+                        let actionResponse =true
+
+                        if(this.routeContent[route] && this.routeContent[route].actions && this.routeContent[route].actions[formAction]){
+                            actionResponse = this.routeContent[route].actions[formAction](req, res)
+                        }else{
+                            
+                            return res.send(renderTemplate(this.getError(route)), 404)
+                        }
+                        if(!actionResponse) return 
+                        if(this.routeContent[route].index){
+                            return res.send(renderTemplate(this.getIndex(route)(req, res)), 200) 
+                        }else{
+                            return res.send(renderTemplate(this.getError(route)),404)
+                        } 
+                    }else{
+                        if(this.routeContent[route].post){
+                            return this.routeContent[route].post(req, res)
+                        }
                     }
+
             
                 }else if(req.method == "PUT"){
                     if(this.routeContent[route].put){
@@ -295,9 +344,14 @@ export default class Routing{
         res.setStatus(402).json({'message': '404 page not found'})
             
     }
+   // checks if the request is a api requst or it is browser request
     async  requestHandler(req, res){
         //adds response methods 
+        await parseBody(req, res)
+        await parseFormData(req, res)
         addResponseFunctions(req, res)
+        await parseSearchParams(req, res)
+
         if(req.method == 'GET' && (req.headers['u-partial'] == 'true' || req.headers['accept'].indexOf('text/html') > -1)){
             await this.pageRoutingHandler(req, res)
     
@@ -305,22 +359,57 @@ export default class Routing{
             await this.pageRoutingHandler(req, res)
     
         }else {
-            console.log('apit routind')
             await this.apiRoutingHandler(req, res)
         }
     }
 }
 
 
+async function parseFormData(req, res){
+    if (req.headers['u-formaction']) {
+        req.formData = JSON.parse(req.body)
+    }
+}
+
+async function parseBody(req, res){
+    let body = '';
+    try {
+        for await (const chunk of req) {
+          body += chunk;
+        }
+        req.body = body
+    } catch (error) {
+      console.error('Error parsing body:', error);
+      res.send('Invalid body data', 400)
+    }
+}
+
+async function parseSearchParams(req, res){
+    if(req.url.indexOf("?") > -1){
+        const query = new URLSearchParams(req.url.split('?')[1]);
+        req.url = req.url.split('?')[0]
+        const params = {};
+        for (const [key, value] of query) {
+          params[key] = value;
+        }
+        req.searchParams = {params}
+    }
 
 
-
-
-
-
-
-// checks if the request is a api requst or it is browser request
-//adds some method to request
+    // console.log('body: ',)
+    // let body = '';
+    // for await (const chunk of req) {
+    //   body += chunk;
+    // }
+    // try {
+    //   const data = JSON.parse(body);
+    //   req.body = data
+    //   console.log(data);
+    // } catch (error) {
+    //   console.error('Error parsing JSON:', error);
+    //   res.send('Invalid JSON', 400)
+    // }
+}
 
 // some fuction for sending respons to browser
 function addResponseFunctions(req, res){
@@ -356,7 +445,6 @@ function matchRoute(path, route){
     var pathArray = path.split('/')
 
     for(let i=0;i<  routeArray.length; i++){
-        console.log('matching(path - route) : ',pathArray[i],routeArray[i])
         if(pathArray[i] != routeArray[i]){
             if(/^(?!\[\.\.\.)\[(.+?)\]/g.test(pathArray[i]) && routeArray[i]){
                 pathArray[i] = pathArray[i].replace(/\[(.+?)\]/g, (match, p1)=>{
@@ -364,7 +452,6 @@ function matchRoute(path, route){
                     return match
                 })
             }else if(/\[\.\.\.(.+?)\]*\]/g.test(pathArray[i]) ){
-                console.log('rest matching')
                 pathArray[i] = pathArray[i].replace(/\[\.\.\.(.+?)\]*\]/g, (match, p1)=>{
                     return match
                 })
@@ -377,7 +464,6 @@ function matchRoute(path, route){
             }
         }
     }
-    console.log('params: ', params)
     return {result, params}
 }
 

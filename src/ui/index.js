@@ -1,3 +1,3 @@
 export { renderScripts } from "./scripts.js";
-export { renderTemplate } from "./template.js";
-export * from './tags.js'
+export { renderTemplate, renderHead } from "./template.js";
+export * from "./tags.js";
