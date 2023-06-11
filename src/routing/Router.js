@@ -134,8 +134,8 @@ export default class Routing{
         return tag('span', {id: 'layout-'+route}, content)
     }
     getLoadFunction(route){
-        if(this.routeContent[route] && this.routeContent[route].actions?.load){
-            return this.routeContent[route].actions.load 
+        if(this.routeContent[route] && this.routeContent[route].load){
+            return this.routeContent[route].load 
         }else{
             return false
         }
