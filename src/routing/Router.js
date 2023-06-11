@@ -394,21 +394,6 @@ async function parseSearchParams(req, res){
         }
         req.searchParams = {params}
     }
-
-
-    // console.log('body: ',)
-    // let body = '';
-    // for await (const chunk of req) {
-    //   body += chunk;
-    // }
-    // try {
-    //   const data = JSON.parse(body);
-    //   req.body = data
-    //   console.log(data);
-    // } catch (error) {
-    //   console.error('Error parsing JSON:', error);
-    //   res.send('Invalid JSON', 400)
-    // }
 }
 
 // some fuction for sending respons to browser
@@ -466,35 +451,3 @@ function matchRoute(path, route){
     }
     return {result, params}
 }
-
-
-
-//when using express
-    
-    // function routeRigesterHandler(req, res, route){
-    //     console.log("incomming route: ", req.url)
-    //     route = normalizeRoute(route)
-    //     let content = Routing.getIndex(route)
-    //     let layout
-    //     //for partial request it returns only pages with out layouts
-    //     if(req.headers['u-partial']){
-    //         return content? res.send(content) : Router.getError(route)
-    //     }
-    
-    //     if(content) {
-    //         layout = renderTemplate( Routing.getLayouts(route, content))
-    //     }else{
-    //         layout = Routing.getError(route)
-    //     }
-    //     res.send(layout) 
-    // }
-    
-    // function registerExpressRoutes(){
-    //     for (let route of Routing.route){
-    //         let changedRoute = route.replace(/\[(.+?)\]/g, (match, p1)=> ":"+p1)
-    //         app.all(changedRoute, (req, res)=>routeRigesterHandler(req, res, route))
-    //     }
-        
-    // }
-    
-    // registerExpressRoutes()
