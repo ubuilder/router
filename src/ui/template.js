@@ -18,7 +18,11 @@ function renderAttributes({
     result += " " + scriptName + "=" + stringify(scriptProps ?? {});
   }
 
+
   for (let [key, value] of Object.entries(object)) {
+    if(key === 'htmlHead') {
+      continue
+    }
     if (value === "") {
       result += " " + key;
     } else {
@@ -55,7 +59,7 @@ export function renderHead(object) {
   if (typeof object === "object") {
     const { tag, slots, props } = object;
 
-    return [props?.htmlHead ?? "", ...slots?.map((slot) => renderHead(slot))]
+    return [props?.htmlHead ? renderTemplate(props.htmlHead) :"", ...slots?.map((slot) => renderHead(slot))]
       .join("\n")
       .trim();
   }

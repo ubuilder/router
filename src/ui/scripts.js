@@ -30,7 +30,6 @@ export function renderScripts(component) {
     .map((key) => scriptsObject[key])
     .join("\n");
 
-  result += "\n\n/* ----------------------------------------------- */\n";
   result += scripts.map((script) => script.script).join("\n");
 
   return result;
