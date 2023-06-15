@@ -95,7 +95,7 @@ export default class Routing{
 
 
     //search and registers all routes in side the dir folder
-    async registerFileBasedRoutes (dir){
+    async registerFileBasedRoutes (dir, prefix = ''){
         const dirent = await readdir(dir, {withFileTypes: true, recursive: true});
         const file = await Promise.all(dirent.map(async dirent =>{
             if(dirent.isDirectory()){
@@ -104,6 +104,8 @@ export default class Routing{
                 
                 const res = resolve(dir, dirent.name )
                 let route = dir.slice(dir.indexOf('routes')+6)
+                if(prefix) route = route + '/'+prefix
+                
                 if(route == '') route = '/'
 
                 if(dirent.name == 'index.js'){
