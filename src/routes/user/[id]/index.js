@@ -1,3 +1,3 @@
-export default function(){
-    return 'user id route'
+export default function(req){
+    return 'user id: '+req.params.id
 }
