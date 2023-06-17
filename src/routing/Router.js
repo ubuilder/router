@@ -160,7 +160,7 @@ export default class Routing{
             return this.getLayout(route, content)
         } 
         if(this.routeContent[route] && this.routeContent[route].layout){
-            return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, this.routeContent[route].layout(content))
+            return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, this.getLayout(route, content))
         }else{
             return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, content)  
         }
@@ -396,21 +396,6 @@ async function parseSearchParams(req, res){
         }
         req.searchParams = {params}
     }
-
-
-    // console.log('body: ',)
-    // let body = '';
-    // for await (const chunk of req) {
-    //   body += chunk;
-    // }
-    // try {
-    //   const data = JSON.parse(body);
-    //   req.body = data
-    //   console.log(data);
-    // } catch (error) {
-    //   console.error('Error parsing JSON:', error);
-    //   res.send('Invalid JSON', 400)
-    // }
 }
 
 // some fuction for sending respons to browser
@@ -437,35 +422,40 @@ function addResponseFunctions(req, res){
 
 // checks if the requsted route is valid
 function matchRoute(path, route){
-    path = path.startsWith('/')? path.slice(1): path
-    route = route.startsWith('/')? route.slice(1): route
-
     const params = {}
     var result = true
-
-    var routeArray = route.split('/')
-    var pathArray = path.split('/')
-
-    for(let i=0;i<  routeArray.length; i++){
-        if(pathArray[i] != routeArray[i]){
-            if(/^(?!\[\.\.\.)\[(.+?)\]/g.test(pathArray[i]) && routeArray[i]){
-                pathArray[i] = pathArray[i].replace(/\[(.+?)\]/g, (match, p1)=>{
-                    params[p1] = routeArray[i]
-                    return match
-                })
-            }else if(/\[\.\.\.(.+?)\]*\]/g.test(pathArray[i]) ){
-                pathArray[i] = pathArray[i].replace(/\[\.\.\.(.+?)\]*\]/g, (match, p1)=>{
-                    return match
-                })
-                //no need to check forther rest can be any value
-                break;
-            }else{
-                result = false 
-                // it does not match no need to check further
-                break;
+    
+    if(!(path.indexOf('/[') > -1)){
+        if(path !== route) result = false
+    }else{
+        path = path.startsWith('/')? path.slice(1): path
+        route = route.startsWith('/')? route.slice(1): route
+        
+        var routeArray = route.split('/')
+        var pathArray = path.split('/')
+    
+        for(let i=0;i<  routeArray.length; i++){
+            if(pathArray[i] != routeArray[i]){
+                if(/^(?!\[\.\.\.)\[(.+?)\]/g.test(pathArray[i]) && routeArray[i]){
+                    pathArray[i] = pathArray[i].replace(/\[(.+?)\]/g, (match, p1)=>{
+                        params[p1] = routeArray[i]
+                        return match
+                    })
+                }else if(/\[\.\.\.(.+?)\]*\]/g.test(pathArray[i]) ){
+                    pathArray[i] = pathArray[i].replace(/\[\.\.\.(.+?)\]*\]/g, (match, p1)=>{
+                        return match
+                    })
+                    //no need to check forther rest can be any value
+                    break;
+                }else{
+                    result = false 
+                    // it does not match no need to check further
+                    break;
+                }
             }
         }
     }
+    
     return {result, params}
 }
 
