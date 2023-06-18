@@ -32,7 +32,7 @@ export default function({req}){
     return tag('form', {method: 'post', action: '/auth'},
     [
         tag('input', { name: 'name', type: 'text'}),
-        tag('input', { type: 'submit'}),
+        tag('input', { type: 'submit', onClick: "console.log(hellow)"}),
     ])
 }
 //usage named actions
