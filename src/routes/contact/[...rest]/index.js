@@ -1,4 +1,4 @@
-export default function(prop){
+export default function({req, res}){
     return 'rest of contact'
     
 }
