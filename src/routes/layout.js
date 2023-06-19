@@ -1,6 +1,6 @@
 import {tag } from "../ui/index.js";
 
-export default function(content){
+export default function({content}){
     return tag('main', {style: 'background-color: rgba(200,200,200, 0.2)'}, 
         [
             tag('header', {class: "header"}, 'hellow: wellcom to ubuildercms'),
