@@ -2,7 +2,7 @@ import {tag} from '../../ui/index.js'
 
 export const actions = {
     //renders the page
-    default: (req, res)=>{
+    default: ({req, res})=>{
         //get form data
         const formData = req.formData
         if(formData.username =='admin' && formData.password =='123'){
@@ -14,12 +14,12 @@ export const actions = {
     },
 
     //returns a json response 
-    register: (req, res)=>{
+    register: ({req, res})=>{
         const formData = req.formData
         if(formData.username =='admin' && formData.password =='123'){
             res.setStatus(200).json({message: 'ok'})
         }else{
-            res.setStatus(301).json({message: 'unauthorized'})
+            res.setStatus(200).json({message: 'unauthorized'})
         }
         
         //when the return is false the response should be sent as json mannualy
@@ -27,7 +27,7 @@ export const actions = {
     },
 }
 
-export default function(req){
+export default function({req}){
     if(req.loggedIn){
         return  tag('div', {}, 
         [
