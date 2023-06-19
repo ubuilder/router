@@ -144,38 +144,38 @@ export default class Routing{
     }
 
 
-    getLayout(route, content){
+    async getLayout(route, content){
         if(this.routeContent[route] && this.routeContent[route].layout)
-            return Routing.wrapLayout(route, this.routeContent[route].layout(Routing.wrapContent(route, content)))   
+            return Routing.wrapLayout(route, await this.routeContent[route].layout(Routing.wrapContent(route, content)))   
         else 
             return content
     }
     // partial page requests need partial layouts
-    getPartialLayouts(route, targetLayout, content){
+    async getPartialLayouts(route, targetLayout, content){
         if(route == '' ) return content
         if(route == targetLayout) return content
-        if(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)) == targetLayout) return this.getLayout(route, content)
+        if(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)) == targetLayout) return await this.getLayout(route, content)
         
         if(route == '/'){
             return this.getLayout(route, content)
         } 
         if(this.routeContent[route] && this.routeContent[route].layout){
-            return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, this.getLayout(route, content))
+            return await this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, await this.getLayout(route, content))
         }else{
-            return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, content)  
+            return await this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, content)  
         }
     }
 
     // for none partial request hole the layout hirarchi until to the base layout should be called
-    getLayouts(route, content){
+    async getLayouts(route, content){
         if(route == '' ) return content
         if(route == '/'){
-            return this.getLayout(route, content)
+            return await this.getLayout(route, content)
         } 
         if(this.routeContent[route] && this.routeContent[route].layout){
-            return this.getLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)),  this.getLayout(route, content))
+            return await this.getLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), await this.getLayout(route, content))
         }else{
-            return this.getLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), content)  
+            return await this.getLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), content)  
         }
     }
 
@@ -240,7 +240,7 @@ export default class Routing{
                 //for partial request it returns only pages with out layouts
                 if(req.headers['u-partial'] == 'true'){
                     const targetLayout = req.headers['target-layout']
-                    layout =  this.getPartialLayouts(route, targetLayout, content)
+                    layout =  await this.getPartialLayouts(route, targetLayout, content)
                     const layoutTemplate = renderTemplate(layout)
                     
                     scriptContent += renderScripts(layout)
@@ -257,7 +257,7 @@ export default class Routing{
                 let response
 
                 if(content) {
-                    let layoutObject = this.getLayouts(route, content)
+                    let layoutObject = await this.getLayouts(route, content)
                     scriptContent += renderScripts(layoutObject)
                     headContent += renderHead(layoutObject)
                     let head = headContent + `<script>${scriptContent}</script>`
