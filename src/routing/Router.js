@@ -136,8 +136,8 @@ export default class Routing{
         return tag('span', {id: 'layout-'+route}, content)
     }
     getLoadFunction(route){
-        if(this.routeContent[route] && this.routeContent[route].actions?.load){
-            return this.routeContent[route].actions.load 
+        if(this.routeContent[route] && this.routeContent[route].load){
+            return this.routeContent[route].load 
         }else{
             return false
         }
@@ -224,8 +224,8 @@ export default class Routing{
             if(result){
                 route = this.normalizeRoute(entries[i][0])
                 //call the load function
-                let loadFunction = await this.getLoadFunction(route)
-                if(loadFunction) loadFunction(req, res)
+                let loadFunction = this.getLoadFunction(route)
+                if(loadFunction) await loadFunction(req, res)
 
                 let contentObject = this.getIndex(route)
                 
@@ -301,8 +301,8 @@ export default class Routing{
                 }else if(req.method == "POST"){
                     //check for actions
                     if(req.headers['u-formaction']){
-                        let loadFunction = await this.getLoadFunction(route)
-                        if(loadFunction) loadFunction(req, res)
+                        let loadFunction = this.getLoadFunction(route)
+                        if(loadFunction) await loadFunction(req, res)
                 
                         const formAction = req.headers['u-formaction']
                         let actionResponse =true
