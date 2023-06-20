@@ -18,10 +18,12 @@ function renderAttributes({
     result += " " + scriptName + "=" + stringify(scriptProps ?? {});
   }
 
-
   for (let [key, value] of Object.entries(object)) {
-    if(key === 'htmlHead') {
-      continue
+    if (value === false || typeof value === "undefined" || value === null)
+      continue;
+
+    if (key === "htmlHead") {
+      continue;
     }
     if (value === "") {
       result += " " + key;
@@ -50,18 +52,4 @@ export function renderTemplate(object) {
     );
   }
   return object;
-}
-
-export function renderHead(object) {
-  if (typeof object === "undefined") return;
-  if (Array.isArray(object))
-    return object.map((item) => renderHead(item)).join("\n");
-  if (typeof object === "object") {
-    const { tag, slots, props } = object;
-
-    return [props?.htmlHead ? renderTemplate(props.htmlHead) :"", ...slots?.map((slot) => renderHead(slot))]
-      .join("\n")
-      .trim();
-  }
-  return "";
 }
