@@ -22,6 +22,15 @@ export function Router() {
       .listen(port);
   }
 
+  function getHandler() {
+    return (req, res) => {
+      if (req.url.endsWith("/") && req.url !== "/")
+        req.url = req.url.substring(0, req.url.length - 1);
+
+      app.lookup(req, res);
+    };
+  }
+
   function parseBody(req) {
     return new Promise((resolve) => {
       let body = "";
@@ -202,6 +211,7 @@ export function Router() {
 
   return {
     startServer,
+    getHandler,
     addPage,
     addLayout,
     removePage,
