@@ -18,6 +18,8 @@
     ".": "./index.js"
   },
   "dependencies": {
-    "nodemon": "^2.0.22"
+    "find-my-way": "^7.6.2",
+    "nodemon": "^2.0.22",
+    "qs": "^6.11.2"
   }
 }

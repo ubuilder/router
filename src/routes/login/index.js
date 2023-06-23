@@ -21,7 +21,7 @@ export const actions = {
 
 export default function(req){
     
-    return tag('form', {htmlHead: '<title>login</title>', method: 'post', action: '/login?action=register'}, [
+    return tag('form', {htmlHead: '<title>login</title>', method: 'post', action: '/login'}, [
         req.loggedIn? tag('div', {}, 'logged in'): '',
         tag('label', { for: 'username' }, 'Username: '),
         tag('input', { type: 'text', id: 'username', name: 'username' }),

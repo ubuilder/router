@@ -163,7 +163,7 @@ export default class Routing{
             return this.getPartialLayouts(route.slice(0, (route.lastIndexOf('/') > 0 ? route.lastIndexOf('/') : 1)), targetLayout, content)  
         }
     }
-
+    
     // for none partial request hole the layout hirarchi until to the base layout should be called
     getLayouts(route, content){
         if(route == '' ) return content
