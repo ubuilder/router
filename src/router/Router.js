@@ -5,7 +5,7 @@ import * as qs from "qs";
 import { renderHead, renderTemplate, renderScripts } from "@ulibs/router";
 import { WebSocketServer } from "ws";
 
-export function Router({ dev = false } = {}) {
+export function Router({ dev = false, reloadTimeout = 300 } = {}) {
   const app = findMyWay();
   const ws_port = 3040;
 
@@ -17,7 +17,7 @@ export function Router({ dev = false } = {}) {
 s.onclose = function(event) {
     setTimeout(() => {
       location.reload()
-    }, 300)
+    }, ${reloadTimeout})
 }
 
 s.onopen = function(event) {
