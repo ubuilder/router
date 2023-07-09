@@ -11,19 +11,13 @@ export function Router({ dev = false, reloadTimeout = 300 } = {}) {
 
   if (dev) {
     app.get("/dev-client.js", (req, res) => {
-      const script = `
-      var s = new WebSocket("ws://localhost:${ws_port}");
+      const script = `const s = new WebSocket("ws://localhost:${ws_port}");
 
 s.onclose = function(event) {
     setTimeout(() => {
       location.reload()
     }, ${reloadTimeout})
-}
-
-s.onopen = function(event) {
-    s.send("Hello world!");
-}
-`;
+}`;
       res.end(script);
     });
 
