@@ -3,9 +3,34 @@ import http from "http";
 import * as qs from "qs";
 
 import { renderHead, renderTemplate, renderScripts } from "@ulibs/router";
+import { WebSocketServer } from "ws";
 
-export function Router() {
+export function Router({ dev = false } = {}) {
   const app = findMyWay();
+  const ws_port = 3040;
+
+  if (dev) {
+    app.get("/dev-client.js", (req, res) => {
+      const script = `
+      var s = new WebSocket("ws://localhost:${ws_port}");
+
+s.onclose = function(event) {
+    setTimeout(() => {
+      location.reload()
+    }, 300)
+}
+
+s.onopen = function(event) {
+    s.send("Hello world!");
+}
+`;
+      res.end(script);
+    });
+
+    new WebSocketServer({
+      port: ws_port,
+    });
+  }
 
   const layouts = [];
 
@@ -104,6 +129,8 @@ export function Router() {
         const template = renderTemplate(result);
         const script = renderScripts(result);
 
+        const devScript = dev ? `<script src="/dev-client.js"></script>` : "";
+
         return `<html>
 <head>
     ${head}
@@ -113,6 +140,7 @@ export function Router() {
     <script>
         ${script}
     </script>
+    ${devScript}
 </body>
 </html>`;
       }
