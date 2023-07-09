@@ -3,7 +3,7 @@ function renderScriptInternal(component) {
     return component.map((x) => renderScriptInternal(x));
   }
 
-  if (typeof component === "object") {
+  if (component && typeof component === "object") {
     return [
       {
         onMount: component.props.onMount,

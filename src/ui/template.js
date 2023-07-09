@@ -1,5 +1,5 @@
 function stringify(object) {
-  if (typeof object === "object" || typeof object === "number") {
+  if (object && typeof object === "object" || typeof object === "number") {
     return "'" + JSON.stringify(object) + "'";
   } else {
     return JSON.stringify(object);
@@ -42,7 +42,7 @@ export function renderTemplate(object) {
   if (typeof object === "undefined") return;
   if (Array.isArray(object))
     return object.map((item) => renderTemplate(item)).join("\n");
-  if (typeof object === "object") {
+  if (object && typeof object === "object") {
     const { tag, slots, props } = object;
 
     if (!tag) return "";
@@ -59,7 +59,7 @@ export function renderHead(object) {
   if (typeof object === "undefined") return;
   if (Array.isArray(object))
     return object.map((item) => renderHead(item)).join("\n");
-  if (typeof object === "object") {
+  if (object && typeof object === "object") {
     const { tag, slots, props } = object;
 
     return [props?.htmlHead ? renderTemplate(props.htmlHead) :"", ...slots?.map((slot) => renderHead(slot))]
