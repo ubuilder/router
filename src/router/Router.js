@@ -2,7 +2,7 @@ import findMyWay from "find-my-way";
 import http from "http";
 import * as qs from "qs";
 
-import { renderHead, renderTemplate, renderScripts } from "@ulibs/router";
+// import { renderHead, renderTemplate, renderScripts } from "@ulibs/router";
 import { WebSocketServer } from "ws";
 
 export function Router({ dev = false, reloadTimeout = 300 } = {}) {
@@ -119,9 +119,9 @@ s.onclose = function(event) {
           result = components[i](props, result);
         }
 
-        const head = renderHead(result);
-        const template = renderTemplate(result);
-        const script = renderScripts(result);
+        const head = result.toHead?.() ?? '';
+        const template = result.toString();
+        const script = result.toScript?.() ?? '';
 
         const devScript = dev ? `<script src="/dev-client.js"></script>` : "";
 
