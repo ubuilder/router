@@ -1,15 +1,35 @@
 import findMyWay from "find-my-way";
 import http from "http";
 import * as qs from "qs";
+import sirv from "sirv";
+import busboy from "busboy-wrapper";
 
-// import { renderHead, renderTemplate, renderScripts } from "@ulibs/router";
 import { WebSocketServer } from "ws";
+import { cpSync, existsSync, fstat, mkdirSync, rmSync, writeFileSync } from "fs";
 
 export function Router({ dev = false, reloadTimeout = 300 } = {}) {
   const app = findMyWay();
-  const ws_port = 3040;
+  let ws_port = 3040;
+
+  let pages = {}
+  let staticFiles = []
+
+  function startWebSocketServer() {
+    try {
+      new WebSocketServer({
+        port: ws_port,
+      });
+    } catch (err) {
+      ws_port = ws_port + 1;
+      startWebSocketServer();
+    }
+  }
 
   if (dev) {
+    console.log('here')
+    startWebSocketServer();
+
+    console.log('here 2')
     app.get("/dev-client.js", (req, res) => {
       const script = `const s = new WebSocket("ws://localhost:${ws_port}");
 
@@ -19,10 +39,6 @@ s.onclose = function(event) {
     }, ${reloadTimeout})
 }`;
       res.end(script);
-    });
-
-    new WebSocketServer({
-      port: ws_port,
     });
   }
 
@@ -48,110 +64,180 @@ s.onclose = function(event) {
     return app.lookup(req, res);
   }
 
-  function parseBody(req) {
-    return new Promise((resolve) => {
-      let body = "";
-      req.on("data", (chunk) => (body += chunk));
-      req.on("end", () => resolve(body));
-    });
+  async function parseBody(req) {
+    console.log("start parse body");
+    try {
+      const { files, fields } = await busboy(req);
+
+      return {
+        files,
+        body: fields,
+      };
+    } catch (err) {
+      // body type is json
+      return new Promise((resolve) => {
+        let body = "";
+        req.on("data", (chunk) => (body += chunk));
+        req.on("end", () => resolve({ body: JSON.parse(body), files: {} }));
+      });
+    }
   }
+
+  function getLoadRequest(req, params) {
+
+    const queryString = req.url.split("?")[1];
+    return {
+      get url() {
+        return req.url;
+      },
+      get headers() {
+        return req.headers ?? {};
+      },
+      get params() {
+        return params;
+      },
+      get query() {
+        return qs.parse(queryString ?? '');
+      },
+      locals: {},
+    };
+  }
+
+  function getLoads(url, page) {
+    return [
+      ...layouts
+        .filter((layout) => url.startsWith(layout.route))
+        .map((layout) => layout.load),
+      page.load,
+    ].filter(Boolean);
+  }
+
+  const helpers = {
+    redirect({ path, status = 301, headers = {} } = {}) {
+      throw new Error(
+        JSON.stringify({
+          status,
+          headers: {
+            ...headers,
+            location: path,
+          },
+        })
+      );
+    },
+    ok({ message = "success!", status = 200, body } = {}) {
+      throw new Error(
+        JSON.stringify({
+          status,
+          headers: {},
+          body: body ?? {
+            message,
+          },
+        })
+      );
+    },
+    fail({ message = "Something went wrong!", body, status = 400 } = {}) {
+      throw new Error(
+        JSON.stringify({
+          status,
+          headers: {},
+          body: body ?? {
+            message,
+          },
+        })
+      );
+    },
+  };
+
+  async function runLoad(req, params, page) {
+    const request = getLoadRequest(req, params, page);
+    let result = {};
+    let loads = getLoads(req.url, page);
+
+    for (let index = 0; index < loads.length; index++) {
+      result = { ...result, ...(await loads[index](request, helpers)) };
+    }
+    return result;
+  }
+
+  function getComponents(url, page) {
+    return [
+      ...layouts
+        .filter((layout) => url.startsWith(layout.route))
+        .map((layout) => layout.component),
+      page.page,
+    ];
+  }
+
+  function renderPage(url, props, page) {
+    let result;
+    const components = getComponents(url, page);
+
+    // let pageComponent = page(props);
+    for (let i = components.length - 1; i >= 0; i--) {
+      const comp =
+        typeof components[i] === "string"
+          ? () => components[i]
+          : components[i];
+      console.log(comp);
+      if (comp) {
+        result = comp(props, result);
+      }
+    }
+
+    console.log(result, components);
+
+    const head = result.toHead?.() ?? "";
+    const template = result.toString();
+    const script = result.toScript?.() ?? "";
+
+    const devScript = dev ? `<script src="/dev-client.js"></script>` : "";
+
+    return `<html>
+<head>
+${head}
+</head>
+<body>
+${template}
+<script>
+    ${script}
+</script>
+${devScript}
+</body>
+</html>`;
+  }
+
 
   function addPage(
     route,
-    { load = undefined, page = undefined, actions = {}, layout }
+    { load = undefined, page = undefined, actions = {}}
   ) {
+    pages[route] = {page, load, actions}
     app.get(route, async (req, res, params) => {
-      function getRequest() {
-        const queryString = req.url.split("?")[1];
-        return {
-          get url() {
-            return req.url;
-          },
-          get headers() {
-            return req.headers;
-          },
-          get params() {
-            return params;
-          },
-          get query() {
-            return qs.parse(queryString);
-          },
-          locals: {},
-        };
-      }
-
-      function getLoads() {
-        return [
-          ...layouts
-            .filter((layout) => req.url.startsWith(layout.route))
-            .map((layout) => layout.load),
-          load,
-        ].filter(Boolean);
-      }
-
-      async function runLoad() {
-        let result = {};
-        let loads = getLoads();
-
-        const request = getRequest();
-
-        for (let index = 0; index < loads.length; index++) {
-          result = { ...result, ...(await loads[index](request)) };
-        }
-        return result;
-      }
-
-      function getComponents() {
-        return [
-          ...layouts
-            .filter((layout) => req.url.startsWith(layout.route))
-            .map((layout) => layout.component),
-          page,
-        ];
-      }
-
-      function renderPage(props) {
-        let result;
-        const components = getComponents();
-
-        // let pageComponent = page(props);
-        for (let i = components.length - 1; i >= 0; i--) {
-          result = components[i](props, result);
-        }
-
-        const head = result.toHead?.() ?? '';
-        const template = result.toString();
-        const script = result.toScript?.() ?? '';
-
-        const devScript = dev ? `<script src="/dev-client.js"></script>` : "";
-
-        return `<html>
-<head>
-    ${head}
-</head>
-<body>
-    ${template}
-    <script>
-        ${script}
-    </script>
-    ${devScript}
-</body>
-</html>`;
-      }
-
+         
       let props = {};
       let result;
 
-      if (load) {
-        props = await runLoad();
-      }
+      try {
+        props = await runLoad(req, params);
 
-      if (page) {
-        result = renderPage(props);
-      } else {
-        result = JSON.stringify(props);
+        if (page) {
+          result = renderPage(req.url, props, {page});
+        } else {
+          result = JSON.stringify(props);
+        }
+        return res.end(result);
+      } catch (err) {
+        try {
+          const result = JSON.parse(err.message);
+
+          res
+            .writeHead(result?.status ?? 400, result?.headers ?? {})
+            .end(result?.body ? JSON.stringify(result.body) : "");
+        } catch (err2) {
+          throw err;
+        }
+        console.log("ERROR: ", err.message);
       }
-      return res.end(result);
     });
 
     app.post(route, async (req, res, params, store, query) => {
@@ -188,16 +274,15 @@ s.onclose = function(event) {
       }
 
       async function getRequest() {
-        const body = await parseBody(req);
+        const { body, files } = await parseBody(req);
 
+        console.log("getRequest", { body, files });
         let request = {
+          get files() {
+            return files;
+          },
           get body() {
-            if (body.startsWith("{")) {
-              // check from header
-              return JSON.parse(body);
-            } else {
-              return qs.parse(body);
-            }
+            return body;
           },
           get query() {
             return query;
@@ -226,14 +311,85 @@ s.onclose = function(event) {
   }
 
   function removePage(route) {
+    delete pages[route]
     app.delete(route);
+  }
+
+  function addStatic({path, prefix = '/'} = {}) {
+    staticFiles = [...staticFiles, {prefix, path}]
+
+    // const files = readdirSync(path)
+    const handler = sirv(path, {
+      dev,
+    });
+
+    app.get(prefix + "*", (req, res, params, store, query) => {
+      return handler(req, res, () => res.end(""));
+    });
+  }
+
+  async function build(output) {
+    if(existsSync(output) && output !== './' && output !== '.') {
+      rmSync(output, {recursive: true})
+
+      mkdirSync(output)
+    }
+
+    // copy static files
+    staticFiles.map(({path, prefix}) => {
+      cpSync(path , output + prefix, {recursive: true})            
+    })
+
+    // all pages
+    console.log(pages)
+    await Promise.all(Object.keys(pages).map(async key => {
+      // 1 render page
+      // app.lookup()
+              
+      console.log(key)
+      let result;
+
+      try {
+        const props = await runLoad({url: '/'}, {}, pages[key]);
+        console.log(props)
+
+        console.log('inside try')
+        if(!existsSync(output + key)) mkdirSync(output + key, {recursive: true})
+
+        console.log('here')
+        if (pages[key].page) {
+          result = renderPage('/', props, pages[key]);
+          console.log('add html file', output + key + '/' + 'index.html')
+          writeFileSync(output + key + '/' + 'index.html', result)
+
+        } else {
+          result = JSON.stringify(props);
+
+          console.log('add json file', output + key + '/' + 'index.json')
+          writeFileSync(output + key + '/' + 'index.json', result)
+
+        }
+
+        // return res.end(result);
+      }catch(err) {
+        console.log(err)
+      }
+      
+      
+    }))
+
+    console.log('app built successfully at ' + process.cwd() + output.replace('./', '/'))
+    process.exit(0)
+
   }
 
   return {
     startServer,
     handleRequest,
     addPage,
+    addStatic,
     addLayout,
     removePage,
+    build
   };
 }

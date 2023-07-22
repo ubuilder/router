@@ -1,20 +1,15 @@
-<html>
-
-<body><button toggle-button='{}'>Toggle</button>
-    <div id="toggle-content">Toggleable Content</div>
-    <script>function toggle_button(el) {
-            const contentElement = document.getElementById("toggle-content");
-            el.addEventListener("click", () => {
-                if (contentElement.style.display === "none") {
-                    contentElement.style.display = "block";
-                } else {
-                    contentElement.style.display = "none";
-                }
-            });
-        }
-        document.querySelectorAll('[toggle-button]').forEach(el => {
-            toggle_button(el, el.getAttribute("toggle-button"))
-        })</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form action="/upload" method="post">
+        <input type="file" name="file" id="3">
+        <input type="text" name="name" id="4">
+        <button>Submit</button>
+    </form>
 </body>
-
 </html>

@@ -18,9 +18,11 @@
     ".": "./index.js"
   },
   "dependencies": {
+    "busboy-wrapper": "^2.1.2",
     "find-my-way": "^7.6.2",
     "nodemon": "^2.0.22",
     "qs": "^6.11.2",
+    "sirv": "^2.0.3",
     "ws": "^8.13.0"
   }
 }
