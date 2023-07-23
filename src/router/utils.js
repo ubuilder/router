@@ -1,6 +1,6 @@
 export function isUrlChildOfLayout(requestUrl, pageUrl) {
-    const requestSplitted = requestUrl.split('/')
-    const pageSplitted = pageUrl.split('/')
+    const requestSplitted = normalizeUrl(requestUrl).split('/')
+    const pageSplitted = normalizeUrl(pageUrl).split('/')
 
     // case: (page: /test/abc/sdef) (request: /abc)
     if(pageSplitted.length > requestSplitted.length) return false;
@@ -9,7 +9,7 @@ export function isUrlChildOfLayout(requestUrl, pageUrl) {
     if(pageSplitted.length === requestSplitted.length) {
       for(let i=0; i<pageSplitted.length; i++) {
         // case (page: /:id) (request: /abc)
-        if(pageSplitted[i].startsWith(':')) {
+        if(pageSplitted[i].startsWith(':') || pageSplitted[i] === '') {
           continue;
         } else {
 
@@ -33,7 +33,7 @@ export function isUrlChildOfLayout(requestUrl, pageUrl) {
       for(let i=0; i<requestSplitted.length; i++) {
         // case (page: /:id) (request: /3/edit)
         if(pageSplitted[i]) {
-          if(pageSplitted[i].startsWith(':')) {
+          if(pageSplitted[i].startsWith(':') || pageSplitted[i] === '') {
             continue
           } else if(pageSplitted[i] !== requestSplitted[i]) {
             return false;
@@ -48,3 +48,9 @@ export function isUrlChildOfLayout(requestUrl, pageUrl) {
     // return requestUrl.startsWith(pageUrl)
   }
   
+
+  export function normalizeUrl(url) {
+    if(url !== '/' && url.endsWith('/')) url = rul.substring(0, url.length - 1)
+
+    return url
+  }

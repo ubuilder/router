@@ -7,7 +7,7 @@ import busboy from "busboy-wrapper";
 import { WebSocketServer } from "ws";
 import { cpSync, existsSync, fstat, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
-import { isUrlChildOfLayout } from "./utils";
+import { isUrlChildOfLayout, normalizeUrl } from "./utils";
 
 export function Router({ dev = false, reloadTimeout = 300 } = {}) {
   const app = findMyWay();
@@ -44,13 +44,12 @@ s.onclose = function(event) {
 
   const layouts = [];
 
+
   function startServer(port = 3000) {
     console.log("server started at http://localhost:" + port);
     return http
       .createServer((req, res) => {
-        // normailze
-        if (req.url.endsWith("/") && req.url !== "/")
-          req.url = req.url.substring(0, req.url.length - 1);
+        req.url = normalizeUrl(req.url)
 
         app.lookup(req, res);
       })
@@ -58,9 +57,8 @@ s.onclose = function(event) {
   }
 
   function handleRequest(req, res) {
-    if (req.url.endsWith("/") && req.url !== "/")
-      req.url = req.url.substring(0, req.url.length - 1);
-
+    req.url = normalizeUrl(req.url)
+        
     return app.lookup(req, res);
   }
 
@@ -210,7 +208,8 @@ ${devScript}
     route,
     { load = undefined, page = undefined, actions = {}}
   ) {
-    if(route.endsWith('/') && route !== '/') route = route.substring(0, route.length - 1)
+    route = normalizeUrl(route)
+        
     pages[route] = {page, load, actions}
     app.get(route, async (req, res, params) => {
          
@@ -337,7 +336,7 @@ ${devScript}
   }
 
   function addLayout(route, { component, load, actions } = {}) {
-    if(route.endsWith('/') && route !== '/') route = route.substring(0, route.length - 1)
+    route = normalizeUrl(route)
 
     layouts.push({ route, component, load, actions });
   }

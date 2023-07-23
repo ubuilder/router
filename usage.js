@@ -1,14 +1,16 @@
 import { isUrlChildOfLayout } from "./src/router/utils.js";
 
-console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages'))
-console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages/:id'))
-console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages/blog'))
-console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages/:id/:action'))
-console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages/asd'))
-console.log(isUrlChildOfLayout('/pages', '/pages/asd'))
-console.log(isUrlChildOfLayout('/', '/'))
-console.log(isUrlChildOfLayout('/', '/test'))
-console.log(isUrlChildOfLayout('/abca', '/:abcc'))
+// console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages'))
+// console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages/:id'))
+// console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages/blog'))
+// console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages/:id/:action'))
+// console.log(isUrlChildOfLayout('/pages/blog/edit', '/pages/asd'))
+// console.log(isUrlChildOfLayout('/pages', '/pages/asd'))
+// console.log(isUrlChildOfLayout('/', '/'))
+// console.log(isUrlChildOfLayout('/', '/test'))
+// console.log(isUrlChildOfLayout('/abca', '/:abcc'))
+console.log(isUrlChildOfLayout('/pages', '/'))
+
 
 
 
