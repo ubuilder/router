@@ -5,7 +5,8 @@ import sirv from "sirv";
 import busboy from "busboy-wrapper";
 
 import { WebSocketServer } from "ws";
-import { cpSync, existsSync, fstat, mkdirSync, rmSync, writeFileSync } from "fs";
+import { cpSync, existsSync, fstat, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { join } from "path";
 
 export function Router({ dev = false, reloadTimeout = 300 } = {}) {
   const app = findMyWay();
@@ -26,10 +27,8 @@ export function Router({ dev = false, reloadTimeout = 300 } = {}) {
   }
 
   if (dev) {
-    console.log('here')
     startWebSocketServer();
 
-    console.log('here 2')
     app.get("/dev-client.js", (req, res) => {
       const script = `const s = new WebSocket("ws://localhost:${ws_port}");
 
@@ -65,7 +64,6 @@ s.onclose = function(event) {
   }
 
   async function parseBody(req) {
-    console.log("start parse body");
     try {
       const { files, fields } = await busboy(req);
 
@@ -178,13 +176,12 @@ s.onclose = function(event) {
         typeof components[i] === "string"
           ? () => components[i]
           : components[i];
-      console.log(comp);
+      
       if (comp) {
         result = comp(props, result);
       }
     }
 
-    console.log(result, components);
 
     const head = result.toHead?.() ?? "";
     const template = result.toString();
@@ -211,6 +208,7 @@ ${devScript}
     route,
     { load = undefined, page = undefined, actions = {}}
   ) {
+    if(route.endsWith('/') && route !== '/') route = route.substring(0, route.length - 1)
     pages[route] = {page, load, actions}
     app.get(route, async (req, res, params) => {
          
@@ -218,7 +216,7 @@ ${devScript}
       let result;
 
       try {
-        props = await runLoad(req, params);
+        props = await runLoad(req, params, pages[route]);
 
         if (page) {
           result = renderPage(req.url, props, {page});
@@ -276,7 +274,7 @@ ${devScript}
       async function getRequest() {
         const { body, files } = await parseBody(req);
 
-        console.log("getRequest", { body, files });
+        
         let request = {
           get files() {
             return files;
@@ -307,6 +305,8 @@ ${devScript}
   }
 
   function addLayout(route, { component, load, actions } = {}) {
+    if(route.endsWith('/') && route !== '/') route = route.substring(0, route.length - 1)
+
     layouts.push({ route, component, load, actions });
   }
 
@@ -318,13 +318,25 @@ ${devScript}
   function addStatic({path, prefix = '/'} = {}) {
     staticFiles = [...staticFiles, {prefix, path}]
 
+    console.log('serve static ' + path)
+    
     // const files = readdirSync(path)
     const handler = sirv(path, {
       dev,
     });
 
     app.get(prefix + "*", (req, res, params, store, query) => {
-      return handler(req, res, () => res.end(""));
+      
+      return handler(req, res, () => {
+        res.writeHead(200, {'Content-type': 'text/javascript'})
+        res.end(
+        readFileSync(
+          join(path, req.url.replace(prefix, ''))
+          , 'utf-8')
+          )
+    })
+        
+    ;
     });
   }
 
@@ -340,32 +352,23 @@ ${devScript}
       cpSync(path , output + prefix, {recursive: true})            
     })
 
-    // all pages
-    console.log(pages)
+ 
     await Promise.all(Object.keys(pages).map(async key => {
-      // 1 render page
-      // app.lookup()
-              
-      console.log(key)
+ 
       let result;
 
       try {
-        const props = await runLoad({url: '/'}, {}, pages[key]);
-        console.log(props)
+        const props = await runLoad({url: key}, {}, pages[key]);
 
-        console.log('inside try')
         if(!existsSync(output + key)) mkdirSync(output + key, {recursive: true})
-
-        console.log('here')
         if (pages[key].page) {
-          result = renderPage('/', props, pages[key]);
-          console.log('add html file', output + key + '/' + 'index.html')
+          result = renderPage(key, props, pages[key]);
+
           writeFileSync(output + key + '/' + 'index.html', result)
 
         } else {
           result = JSON.stringify(props);
 
-          console.log('add json file', output + key + '/' + 'index.json')
           writeFileSync(output + key + '/' + 'index.json', result)
 
         }
