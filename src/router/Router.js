@@ -296,7 +296,37 @@ ${devScript}
 
       const request = await getRequest();
 
-      const result = await getCurrentAction()(request);
+      const helpers = {
+        redirect({path, status=303, headers = {}}){
+          return {
+            status,
+            headers: {
+              location: path,
+              ...headers
+            },
+            body: {}
+          }
+        },
+        fail({message = 'something went wrong', status = 400, headers = {}, body}){
+          return {
+            status,
+            headers: {
+              ...headers
+            },
+            body: body ?? {message}
+          }
+        },
+        ok({message = 'success', status = 200, headers = {}, body}){
+          return {
+            status,
+            headers: {
+              ...headers
+            },
+            body: body ?? {message}
+          }
+        }
+      }
+      const result = await getCurrentAction()(request, helpers);
 
       res
         .writeHead(result?.status ?? 200, result?.headers ?? {})
