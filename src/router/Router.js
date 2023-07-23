@@ -364,9 +364,7 @@ ${devScript}
           join(path, req.url.replace(prefix, ''))
           , 'utf-8')
           )
-    })
-        
-    ;
+    });
     });
   }
 
