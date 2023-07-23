@@ -7,7 +7,7 @@ import busboy from "busboy-wrapper";
 import { WebSocketServer } from "ws";
 import { cpSync, existsSync, fstat, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
-import { isUrlChildOfLayout, normalizeUrl } from "./utils";
+import { isUrlChildOfLayout, normalizeUrl } from "./utils.js";
 
 export function Router({ dev = false, reloadTimeout = 300 } = {}) {
   const app = findMyWay();
