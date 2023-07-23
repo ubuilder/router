@@ -7,6 +7,7 @@ import busboy from "busboy-wrapper";
 import { WebSocketServer } from "ws";
 import { cpSync, existsSync, fstat, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
+import { isUrlChildOfLayout } from "./utils";
 
 export function Router({ dev = false, reloadTimeout = 300 } = {}) {
   const app = findMyWay();
@@ -81,6 +82,7 @@ s.onclose = function(event) {
     }
   }
 
+
   function getLoadRequest(req, params) {
 
     const queryString = req.url.split("?")[1];
@@ -104,7 +106,7 @@ s.onclose = function(event) {
   function getLoads(url, page) {
     return [
       ...layouts
-        .filter((layout) => url.startsWith(layout.route))
+        .filter((layout) => isUrlChildOfLayout(url, layout.route))
         .map((layout) => layout.load),
       page.load,
     ].filter(Boolean);
@@ -160,7 +162,7 @@ s.onclose = function(event) {
   function getComponents(url, page) {
     return [
       ...layouts
-        .filter((layout) => url.startsWith(layout.route))
+        .filter((layout) => isUrlChildOfLayout(url, layout.route))
         .map((layout) => layout.component),
       page.page,
     ];
@@ -252,7 +254,7 @@ ${devScript}
       function getActions() {
         return [
           ...layouts
-            .filter((layout) => req.url.startsWith(layout.route))
+            .filter((layout) => isUrlChildOfLayout(req.url, layout.route))
             .map((layout) => layout.actions),
           actions,
         ].filter(Boolean);
