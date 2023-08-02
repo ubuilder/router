@@ -182,6 +182,7 @@ s.onclose = function(event) {
       }
     }
 
+    if(!result) return ''
 
     const head = result.toHead?.() ?? "";
     const template = result.toString();
