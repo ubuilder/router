@@ -50,7 +50,7 @@ export function isUrlChildOfLayout(requestUrl, pageUrl) {
   
 
   export function normalizeUrl(url) {
-    if(url !== '/' && url.endsWith('/')) url = rul.substring(0, url.length - 1)
+    if(url !== '/' && url.endsWith('/')) url = url.substring(0, url.length - 1)
 
     return url
   }
