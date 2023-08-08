@@ -347,7 +347,9 @@ ${devScript}
     app.delete(route);
   }
 
-  function addStatic({path, prefix = '/'} = {}) {
+  function addStatic({path, prefix = '/', opts = {
+  maxAge: 60 * 60 * 24, // 1D
+  }} = {}) {
     staticFiles = [...staticFiles, {prefix, path}]
 
     console.log('serve static ' + path)
@@ -355,6 +357,7 @@ ${devScript}
     // const files = readdirSync(path)
     const handler = sirv(path, {
       dev,
+      ...opts
     });
 
     app.get(prefix + "*", (req, res, params, store, query) => {
