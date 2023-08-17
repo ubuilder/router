@@ -1,3 +1,3 @@
-export default function({params}){
+export default function({req}){
     return 'new user'
 }

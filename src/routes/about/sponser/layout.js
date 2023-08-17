@@ -1,6 +1,6 @@
 import { tag } from "../../../ui/index.js"
-export default function(prop){
-    console.log('layout: ', prop)
+export default function({res, req, content}){
+    console.log('layout: ', content)
     return tag('div', {}, [
         tag('div', {}, [
 
@@ -12,7 +12,7 @@ export default function(prop){
             tag('a', {href: './contact'}, 'contact'),
             // tag('hr', {}, [])
         ]),
-        tag('div', {}, prop)
+        tag('div', {}, content)
 
     ])
 }

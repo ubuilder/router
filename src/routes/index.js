@@ -1,6 +1,6 @@
 import { tag } from "../ui/index.js";
 
-export default function(prop){
+export default function({req, res}){
     return tag('div', {htmlHead: '<title>ubuilder cms</title>'}, 'hellow world this is home page')
 }
 
@@ -9,7 +9,7 @@ export function error(prop){
 }
 
 export let actions = {
-    load: async (req)=>{
+    load: async ({req})=>{
         console.log('load function called')
     }
 }

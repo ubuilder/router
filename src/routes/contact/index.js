@@ -1,5 +1,5 @@
 import { tag } from "../../ui/index.js"
-export default function(prop){
+export default function({req, res}){
     return tag('div', {}, [
         tag('div', {}, [
 
