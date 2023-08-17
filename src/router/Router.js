@@ -371,7 +371,7 @@ ${devScript}
     app.get(prefix + "*", (req, res, params, store, query) => {
       
       return handler(req, res, () => {
-        res.writeHead(200, {'Content-type': 'text/javascript'})
+        res.writeHead(200, {'Content-type': 'text/javascript', "Cache-Control": `max-age=${opts.maxAge}`})
         res.end(
         readFileSync(
           join(path, req.url.replace(prefix, ''))
