@@ -184,8 +184,10 @@ s.onclose = function(event) {
 
     if(!result) return ''
 
+    if(typeof result !== 'object') return result;
+
     const head = result.toHead?.() ?? "";
-    const template = result.toString();
+    const template = result.toString() ?? "";
     const script = result.toScript?.() ?? "";
 
     const devScript = dev ? `<script src="/dev-client.js"></script>` : "";
@@ -278,6 +280,12 @@ ${devScript}
 
         
         let request = {
+          get url() {
+            return req.url
+          },
+          get headers() {
+            return req.headers ?? {}
+          },
           get files() {
             return files;
           },
